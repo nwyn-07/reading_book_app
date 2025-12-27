@@ -16,7 +16,7 @@ class _StoryScreenState extends State<StoryScreen> {
   @override
   void initState() {
     super.initState();
-    storyCategories = storyCategories;
+    storyCategories = List.from((StoryCategory.mockData));
   }
 
   @override
