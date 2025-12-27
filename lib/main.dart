@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:reading_book_app/core/MainShell.dart';
+import 'package:reading_book_app/core/audio/screens/AudioScreen.dart';
 import 'package:reading_book_app/core/utils/Utils.dart';
 
 void main() {
@@ -11,6 +12,8 @@ void main() {
       routes: {
         '/': (context) => MainShell(),
         '/home': (context) => MainShell(),
+        //'/story': (context) => AudioScreen(),
+        '/audio': (context) => AudioScreen(),
         // '/studentInfo': (context) {
         //   var args = ModalRoute.of(context)!.settings.arguments as Map;
         //   return StudentDetailScreen(student: args["student"]);
