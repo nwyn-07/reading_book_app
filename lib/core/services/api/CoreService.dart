@@ -1,0 +1,238 @@
+import 'package:reading_book_app/core/services/api/Endpoint.dart';
+import 'package:reading_book_app/core/services/api/FetchApi.dart';
+
+class CoreServices {
+  CoreServices._();
+  static final CoreServices instance = CoreServices._();
+  final FetchApi _api = FetchApi();
+
+  /* =========================
+   * AUTH
+   * ========================= */
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    final res = await _api.post(
+      Endpoint.login,
+      body: {"email": email, "password": password},
+    );
+
+    return res as Map<String, dynamic>;
+  }
+
+  /* =========================
+ * AUTH
+ * ========================= */
+  Future<Map<String, dynamic>> register(String email, String password) async {
+    final res = await _api.post(
+      Endpoint.register,
+      body: {"email": email, "password": password},
+    );
+    return res as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> me() async {
+    final res = await _api.get(Endpoint.me);
+    return res as Map<String, dynamic>;
+  }
+
+  /* =========================
+ * ADMIN
+ * ========================= */
+  Future<List> adminUsers() async {
+    final res = await _api.get(Endpoint.adminUsers);
+    return res as List;
+  }
+
+  Future<List> adminStories() async {
+    final res = await _api.get(Endpoint.adminStories);
+    return res as List;
+  }
+
+  Future<List> adminChapters() async {
+    final res = await _api.get(Endpoint.adminChapters);
+    return res as List;
+  }
+
+  Future<Map<String, dynamic>> adminDashboard() async {
+    final res = await _api.get(Endpoint.adminDashboard);
+    return res as Map<String, dynamic>;
+  }
+
+  /* =========================
+ * STORY
+ * ========================= */
+  Future<List> stories({int page = 1, int size = 10}) async {
+    final res = await _api.get(
+      Endpoint.stories,
+      query: {"page": page.toString(), "size": size.toString()},
+    );
+    return res as List;
+  }
+
+  Future<Map<String, dynamic>> storyDetail(String id) async {
+    final res = await _api.get(Endpoint.storyDetail(id));
+    return res as Map<String, dynamic>;
+  }
+
+  Future<List> searchStory(String keyword) async {
+    final res = await _api.get(Endpoint.storySearch(keyword));
+    return res as List;
+  }
+
+  Future<Map<String, dynamic>> createStory(Map<String, dynamic> body) async {
+    final res = await _api.post(Endpoint.storyCreate, body: body);
+    return res as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> updateStory(
+    String id,
+    Map<String, dynamic> body,
+  ) async {
+    final res = await _api.put(Endpoint.storyUpdate(id), body: body);
+    return res as Map<String, dynamic>;
+  }
+
+  Future<void> deleteStory(String id) async {
+    await _api.delete(Endpoint.storyDelete(id));
+  }
+
+  Future<List> storyChapters(String storyId) async {
+    final res = await _api.get(Endpoint.storyChapters(storyId));
+    return res as List;
+  }
+
+  /* =========================
+ * CHAPTER
+ * ========================= */
+  Future<Map<String, dynamic>> chapterDetail(String chapterId) async {
+    final res = await _api.get(Endpoint.chapterDetail(chapterId));
+    return res as Map<String, dynamic>;
+  }
+
+  /* =========================
+ * LIBRARY
+ * ========================= */
+  Future<List> library() async {
+    final res = await _api.get(Endpoint.library);
+    return res as List;
+  }
+
+  Future<void> addLibrary(String storyId) async {
+    await _api.post(Endpoint.libraryAdd, body: {"storyId": storyId});
+  }
+
+  Future<void> removeLibrary(String storyId) async {
+    await _api.post(Endpoint.libraryRemove, body: {"storyId": storyId});
+  }
+
+  /* =========================
+ * LIBRARY STORY
+ * ========================= */
+  Future<List> libraryStories() async {
+    final res = await _api.get(Endpoint.libraryStories);
+    return res as List;
+  }
+
+  /* =========================
+ * BOOKMARK
+ * ========================= */
+  Future<List> bookmarks() async {
+    final res = await _api.get(Endpoint.bookmarks);
+    return res as List;
+  }
+
+  Future<void> addBookmark(String chapterId) async {
+    await _api.post(Endpoint.bookmarkAdd, body: {"chapterId": chapterId});
+  }
+
+  Future<void> removeBookmark(String chapterId) async {
+    await _api.post(Endpoint.bookmarkRemove, body: {"chapterId": chapterId});
+  }
+
+  /* =========================
+ * HISTORY
+ * ========================= */
+  Future<List> history() async {
+    final res = await _api.get(Endpoint.readingHistory);
+    return res as List;
+  }
+
+  Future<void> clearHistory() async {
+    await _api.post(Endpoint.clearHistory);
+  }
+
+  /* =========================
+ * READING
+ * ========================= */
+  Future<void> startReading(String chapterId) async {
+    await _api.post(Endpoint.startReading, body: {"chapterId": chapterId});
+  }
+
+  Future<void> updateReading(String chapterId, int progress) async {
+    await _api.post(
+      Endpoint.updateReading,
+      body: {"chapterId": chapterId, "progress": progress},
+    );
+  }
+
+  Future<void> finishReading(String chapterId) async {
+    await _api.post(Endpoint.finishReading, body: {"chapterId": chapterId});
+  }
+
+  /* =========================
+ * STATS
+ * ========================= */
+  Future<Map<String, dynamic>> statsDay() async {
+    final res = await _api.get(Endpoint.readingStatsByDay);
+    return res as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> statsMonth() async {
+    final res = await _api.get(Endpoint.readingStatsByMonth);
+    return res as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> statsYear() async {
+    final res = await _api.get(Endpoint.readingStatsByYear);
+    return res as Map<String, dynamic>;
+  }
+
+  /* =========================
+ * SLEEP TIMER
+ * ========================= */
+  Future<void> setSleepTimer(int minutes) async {
+    await _api.post(Endpoint.sleepTimerSet, body: {"minutes": minutes});
+  }
+
+  Future<void> cancelSleepTimer() async {
+    await _api.post(Endpoint.sleepTimerCancel);
+  }
+
+  Future<Map<String, dynamic>> sleepTimerStatus() async {
+    final res = await _api.get(Endpoint.sleepTimerStatus);
+    return res as Map<String, dynamic>;
+  }
+
+  /* =========================
+ * OFFLINE
+ * ========================= */
+  Future<void> offlineDownload(String storyId) async {
+    await _api.post(Endpoint.offlineDownload, body: {"storyId": storyId});
+  }
+
+  Future<List> offlineList() async {
+    final res = await _api.get(Endpoint.offlineList);
+    return res as List;
+  }
+
+  Future<void> offlineRemove(String storyId) async {
+    await _api.post(Endpoint.offlineRemove, body: {"storyId": storyId});
+  }
+
+  /* =========================
+ * FILE
+ * ========================= */
+  Future<Map<String, dynamic>> uploadFile(String base64) async {
+    final res = await _api.post(Endpoint.uploadFile, body: {"file": base64});
+    return res as Map<String, dynamic>;
+  }
+}

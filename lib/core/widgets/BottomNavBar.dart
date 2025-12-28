@@ -55,25 +55,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
           ),
           label: 'Khám phá',
         ),
-        BottomNavigationBarItem(
-          icon: SvgPicture.asset(
-            'assets/icons/audio.svg',
-            width: 22,
-            colorFilter: ColorFilter.mode(
-              AppColors.iconInactive,
-              BlendMode.srcIn,
-            ),
-          ),
-          activeIcon: SvgPicture.asset(
-            'assets/icons/audio.svg',
-            width: 22,
-            colorFilter: ColorFilter.mode(
-              AppColors.iconActive,
-              BlendMode.srcIn,
-            ),
-          ),
-          label: 'Âm thanh',
-        ),
+
         BottomNavigationBarItem(
           icon: SvgPicture.asset(
             'assets/icons/book.svg',
@@ -92,6 +74,25 @@ class _BottomNavBarState extends State<BottomNavBar> {
             ),
           ),
           label: 'Chuyện ngủ',
+        ),
+        BottomNavigationBarItem(
+          icon: SvgPicture.asset(
+            'assets/icons/library.svg',
+            width: 22,
+            colorFilter: ColorFilter.mode(
+              AppColors.iconInactive,
+              BlendMode.srcIn,
+            ),
+          ),
+          activeIcon: SvgPicture.asset(
+            'assets/icons/library.svg',
+            width: 22,
+            colorFilter: ColorFilter.mode(
+              AppColors.iconActive,
+              BlendMode.srcIn,
+            ),
+          ),
+          label: 'Thư viện',
         ),
         BottomNavigationBarItem(
           icon: SvgPicture.asset(
