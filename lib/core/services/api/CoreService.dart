@@ -1,3 +1,5 @@
+import 'package:reading_book_app/core/models/Library.dart';
+import 'package:reading_book_app/core/models/LibraryStory.dart';
 import 'package:reading_book_app/core/services/api/Endpoint.dart';
 import 'package:reading_book_app/core/services/api/FetchApi.dart';
 
@@ -111,25 +113,47 @@ class CoreServices {
   /* =========================
  * LIBRARY
  * ========================= */
-  Future<List> library() async {
+  Future<List<Library>> library() async {
     final res = await _api.get(Endpoint.library);
-    return res as List;
+
+    return (res as List).map((e) => Library.fromJson(e)).toList();
   }
 
-  Future<void> addLibrary(String storyId) async {
-    await _api.post(Endpoint.libraryAdd, body: {"storyId": storyId});
+  Future<void> addLibrary(String name) async {
+    await _api.post(Endpoint.libraryAdd, body: {"name": name});
   }
 
   Future<void> removeLibrary(String storyId) async {
     await _api.post(Endpoint.libraryRemove, body: {"storyId": storyId});
   }
 
-  /* =========================
- * LIBRARY STORY
- * ========================= */
-  Future<List> libraryStories() async {
-    final res = await _api.get(Endpoint.libraryStories);
-    return res as List;
+  Future<List<LibraryStory>> libraryStories(String libraryId) async {
+    final res = await _api.post(
+      Endpoint.libraryStories,
+      body: {"libraryId": libraryId},
+    );
+
+    return (res as List).map((e) => LibraryStory.fromJson(e)).toList();
+  }
+
+  Future<void> addStoryToLibrary({
+    required String libraryId,
+    required String storyId,
+  }) async {
+    await _api.post(
+      Endpoint.libraryStoryAdd,
+      body: {'libraryId': libraryId, 'storyId': storyId},
+    );
+  }
+
+  Future<void> removeStoryFromLibrary({
+    required String libraryId,
+    required String storyId,
+  }) async {
+    await _api.post(
+      Endpoint.libraryStoryRemove,
+      body: {'libraryId': libraryId, 'storyId': storyId},
+    );
   }
 
   /* =========================

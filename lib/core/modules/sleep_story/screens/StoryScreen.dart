@@ -30,7 +30,6 @@ class _StoryScreenState extends State<StoryScreen> {
     });
   }
 
-  /// 🔥 FILTER LOGIC
   List<Book> _filterStories(List<Book> stories) {
     if (selectedCategory == 'ALL') return stories;
 
@@ -42,7 +41,6 @@ class _StoryScreenState extends State<StoryScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          /// BACKGROUND
           Positioned.fill(
             child: Image.asset(
               'assets/images/background.png',
@@ -50,7 +48,6 @@ class _StoryScreenState extends State<StoryScreen> {
             ),
           ),
 
-          /// CONTENT
           Consumer<StoryStore>(
             builder: (context, store, _) {
               if (store.isLoading && store.stories.isEmpty) {
@@ -68,20 +65,10 @@ class _StoryScreenState extends State<StoryScreen> {
 
               final filteredStories = _filterStories(store.stories);
 
-              if (filteredStories.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'Không có truyện phù hợp',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                );
-              }
-
               return CustomScrollView(
                 slivers: [
                   const SliverToBoxAdapter(child: SizedBox(height: 260)),
 
-                  /// HEADER
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
@@ -99,7 +86,6 @@ class _StoryScreenState extends State<StoryScreen> {
                     ),
                   ),
 
-                  /// CATEGORY
                   SliverToBoxAdapter(
                     child: SizedBox(
                       height: 36,
@@ -132,53 +118,63 @@ class _StoryScreenState extends State<StoryScreen> {
                   ),
 
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                  /// GRID
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    sliver: SliverGrid(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final book = filteredStories[index];
-
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).pushNamed(
-                              '/chapter',
-                              arguments: {
-                                'storyId': book.id,
-                                'storyTitle': book.title,
-                              },
-                            );
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.all(12),
-                            child: Text(
-                              book.title,
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
+                  filteredStories.isEmpty
+                      ? SliverToBoxAdapter(
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(
+                                'Không có câu chuyện nào trong mục này.',
+                                style: AppTextStyles.body,
                               ),
                             ),
                           ),
-                        );
-                      }, childCount: filteredStories.length),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 0.75,
+                        )
+                      : SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          sliver: SliverGrid(
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              final book = filteredStories[index];
+
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).pushNamed(
+                                    '/chapter',
+                                    arguments: {'story': book},
+                                  );
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.all(12),
+                                  child: Text(
+                                    book.title,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }, childCount: filteredStories.length),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 0.75,
+                                ),
                           ),
-                    ),
-                  ),
+                        ),
 
                   const SliverToBoxAdapter(child: SizedBox(height: 120)),
                 ],
@@ -186,7 +182,6 @@ class _StoryScreenState extends State<StoryScreen> {
             },
           ),
 
-          /// MINI PLAYER
           const Align(alignment: Alignment.bottomCenter, child: MiniPlayer()),
         ],
       ),

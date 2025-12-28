@@ -3,20 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:reading_book_app/core/models/Chapter.dart';
-import 'package:reading_book_app/core/services/audio/AudioService.dart';
+import 'package:reading_book_app/core/modules/library/sheet/LibraryPickerSheet.dart';
+
+import 'package:reading_book_app/core/stores/AudioStore.dart';
+import 'package:reading_book_app/core/stores/LibraryStore.dart';
+import 'package:reading_book_app/core/models/SleepOptions.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
 import '../components/SleepTimerWidget.dart';
 
 class AudioScreen extends StatefulWidget {
-  final String storyTitle;
-  final Chapter chapter;
-
-  const AudioScreen({
-    super.key,
-    required this.storyTitle,
-    required this.chapter,
-  });
+  const AudioScreen({super.key});
 
   @override
   State<AudioScreen> createState() => _AudioScreenState();
@@ -24,31 +20,24 @@ class AudioScreen extends StatefulWidget {
 
 class _AudioScreenState extends State<AudioScreen> {
   Timer? _sleepTimer;
-  Duration _duration = Duration.zero;
+  SleepOption? _currentSleepOption;
+  bool _isLooping = false;
 
-  late AudioService _audio;
+  late AudioStore _audio;
 
   @override
   void initState() {
     super.initState();
+    _audio = context.read<AudioStore>();
 
-    _audio = context.read<AudioService>();
-
-    _audio.player.durationStream.listen((d) {
-      if (d != null && mounted) {
-        setState(() => _duration = d);
-      }
-    });
-
+    /// đảm bảo load thư viện yêu thích
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _audio.playChapter(story: widget.storyTitle, chapter: widget.chapter);
+      context.read<LibraryStore>().fetchLibraries();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final player = _audio.player;
-
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -58,73 +47,82 @@ class _AudioScreenState extends State<AudioScreen> {
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 16),
+          child: Consumer<AudioStore>(
+            builder: (_, audio, _) {
+              final chapter = audio.currentChapter;
+              final story = audio.currentStory;
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Colors.white54,
-                      ),
-                      onPressed: () => Navigator.pop(context),
+              if (chapter == null || story == null) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              return Column(
+                children: [
+                  const SizedBox(height: 16),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.white54,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        GestureDetector(
+                          onTap: _showSleepTimer,
+                          child: SvgPicture.asset(
+                            'assets/icons/clock.svg',
+                            width: 22,
+                            colorFilter: const ColorFilter.mode(
+                              Colors.white54,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    GestureDetector(
-                      onTap: _showSleepTimer,
-                      child: SvgPicture.asset(
-                        'assets/icons/clock.svg',
-                        width: 22,
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white54,
-                          BlendMode.srcIn,
+                  ),
+
+                  const SizedBox(height: 70),
+
+                  Column(
+                    children: [
+                      Text(
+                        chapter.title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 70),
-
-              Column(
-                children: [
-                  Text(
-                    widget.chapter.title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                      const SizedBox(height: 8),
+                      Text(
+                        chapter.content,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.white60),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.chapter.content,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white60),
-                  ),
-                ],
-              ),
 
-              const Spacer(),
+                  const Spacer(),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _icon('previous-stroke-rounded.svg'),
-                  StreamBuilder<PlayerState>(
-                    stream: player.playerStateStream,
-                    builder: (_, snapshot) {
-                      final playing = snapshot.data?.playing ?? false;
-                      return GestureDetector(
-                        onTap: () => playing ? _audio.pause() : _audio.resume(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      GestureDetector(
+                        onTap: audio.hasPrevious ? audio.playPrevious : null,
+                        child: _icon('previous-stroke-rounded.svg'),
+                      ),
+
+                      GestureDetector(
+                        onTap: audio.isPlaying ? audio.pause : audio.resume,
                         child: SvgPicture.asset(
-                          playing
+                          audio.isPlaying
                               ? 'assets/icons/pause.svg'
                               : 'assets/icons/play-1003-svgrepo-com.svg',
                           width: 48,
@@ -133,65 +131,179 @@ class _AudioScreenState extends State<AudioScreen> {
                             BlendMode.srcIn,
                           ),
                         ),
-                      );
-                    },
+                      ),
+
+                      GestureDetector(
+                        onTap: audio.hasNext ? audio.playNext : null,
+                        child: _icon('next-stroke-rounded.svg'),
+                      ),
+                    ],
                   ),
-                  _icon('next-stroke-rounded.svg'),
-                ],
-              ),
 
-              const SizedBox(height: 70),
+                  const SizedBox(height: 70),
 
-              StreamBuilder<Duration>(
-                stream: player.positionStream,
-                builder: (_, snapshot) {
-                  final position = snapshot.data ?? Duration.zero;
-                  final max = _duration.inSeconds > 0 ? _duration.inSeconds : 1;
-
-                  return Padding(
+                  Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
                         Text(
-                          _format(position),
+                          _format(audio.position),
                           style: const TextStyle(color: Colors.white60),
                         ),
                         Expanded(
                           child: Slider(
-                            value: position.inSeconds.clamp(0, max).toDouble(),
+                            value: audio.position.inSeconds
+                                .clamp(
+                                  0,
+                                  audio.duration.inSeconds > 0
+                                      ? audio.duration.inSeconds
+                                      : 1,
+                                )
+                                .toDouble(),
                             min: 0,
-                            max: max.toDouble(),
+                            max:
+                                (audio.duration.inSeconds > 0
+                                        ? audio.duration.inSeconds
+                                        : 1)
+                                    .toDouble(),
                             activeColor: Colors.orangeAccent,
                             inactiveColor: Colors.white24,
                             onChanged: (v) {
-                              player.seek(Duration(seconds: v.toInt()));
+                              audio.seek(Duration(seconds: v.toInt()));
                             },
                           ),
                         ),
                         Text(
-                          _format(_duration),
+                          _format(audio.duration),
                           style: const TextStyle(color: Colors.white60),
                         ),
                       ],
                     ),
-                  );
-                },
-              ),
+                  ),
 
-              const SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _icon('menu-01-stroke-rounded.svg'),
-                  _icon('repeat-stroke-rounded.svg'),
-                  _icon('favourite-stroke-rounded.svg'),
-                  _icon('cloud-download-stroke-rounded.svg'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          final story = context.read<AudioStore>().currentStory;
+                          if (story == null) return;
+
+                          context.read<LibraryStore>().fetchLibraries();
+
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) =>
+                                LibraryPickerSheet(storyId: story.id),
+                          );
+                        },
+                        child: _icon('menu-01-stroke-rounded.svg'),
+                      ),
+
+                      GestureDetector(
+                        onTap: _toggleLoop,
+                        child: SvgPicture.asset(
+                          _isLooping
+                              ? 'assets/icons/repeat-one-01-stroke-rounded.svg'
+                              : 'assets/icons/repeat-stroke-rounded.svg',
+                          width: 30,
+                          colorFilter: ColorFilter.mode(
+                            _isLooping
+                                ? AppColors.textPrimary
+                                : AppColors.iconInactive,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+
+                      Consumer<LibraryStore>(
+                        builder: (_, lib, _) {
+                          final isFav = lib.isFavorite(story.id);
+                          return GestureDetector(
+                            onTap: () => isFav
+                                ? lib.removeFromFavorite(story.id)
+                                : lib.addToFavorite(story.id),
+                            child: SvgPicture.asset(
+                              isFav
+                                  ? 'assets/icons/favourite-filled.svg'
+                                  : 'assets/icons/favourite-stroke-rounded.svg',
+                              width: 30,
+                              colorFilter: ColorFilter.mode(
+                                isFav
+                                    ? Colors.redAccent
+                                    : AppColors.iconInactive,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      Consumer<AudioStore>(
+                        builder: (_, audio, _) {
+                          final chapterId = chapter.id;
+                          if (audio.isDownloading) {
+                            return SizedBox(
+                              width: 25,
+                              height: 25,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  CircularProgressIndicator(
+                                    value: audio.downloadProgress,
+                                    strokeWidth: 3,
+                                    color: AppColors.accent,
+                                    backgroundColor: AppColors.iconInactive
+                                        .withOpacity(0.3),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return FutureBuilder<bool>(
+                            future: audio.checkDownloaded(chapterId),
+                            builder: (_, snapshot) {
+                              final downloaded = snapshot.data ?? false;
+
+                              return GestureDetector(
+                                onTap: () async {
+                                  if (downloaded) {
+                                    await audio.removeDownloadedChapter(
+                                      chapter,
+                                    );
+                                  } else {
+                                    await audio.downloadChapter(chapter);
+                                  }
+                                },
+                                child: SvgPicture.asset(
+                                  downloaded
+                                      ? 'assets/icons/cloud-download-filled.svg'
+                                      : 'assets/icons/cloud-download-stroke-rounded.svg',
+                                  width: 30,
+                                  colorFilter: ColorFilter.mode(
+                                    downloaded
+                                        ? AppColors.accent
+                                        : AppColors.iconInactive,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 40),
                 ],
-              ),
-
-              const SizedBox(height: 40),
-            ],
+              );
+            },
           ),
         ),
       ),
@@ -212,14 +324,23 @@ class _AudioScreenState extends State<AudioScreen> {
     return '$m:$s';
   }
 
+  void _toggleLoop() async {
+    setState(() => _isLooping = !_isLooping);
+    await _audio.player.setLoopMode(_isLooping ? LoopMode.one : LoopMode.off);
+  }
+
   void _startSleepTimer(Duration duration) {
     _sleepTimer?.cancel();
-    _sleepTimer = Timer(duration, () => _audio.pause());
+    _sleepTimer = Timer(duration, _audio.pause);
+    _currentSleepOption = sleepOptions.firstWhere(
+      (e) => e.duration == duration,
+    );
   }
 
   void _cancelSleepTimer() {
     _sleepTimer?.cancel();
     _sleepTimer = null;
+    _currentSleepOption = null;
   }
 
   void _showSleepTimer() {
@@ -230,13 +351,9 @@ class _AudioScreenState extends State<AudioScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => SleepTimerWidget(
-        onSelected: (duration) {
-          if (duration == null) {
-            _cancelSleepTimer();
-          } else {
-            _startSleepTimer(duration);
-          }
-        },
+        initialOption: _currentSleepOption,
+        onSelected: (d) =>
+            d == null ? _cancelSleepTimer() : _startSleepTimer(d),
         onCancel: _cancelSleepTimer,
       ),
     );

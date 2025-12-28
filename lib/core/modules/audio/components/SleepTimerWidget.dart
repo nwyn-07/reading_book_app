@@ -5,8 +5,14 @@ import 'package:reading_book_app/core/models/SleepOptions.dart';
 class SleepTimerWidget extends StatefulWidget {
   final void Function(Duration? duration) onSelected;
   final VoidCallback? onCancel;
+  final SleepOption? initialOption;
 
-  const SleepTimerWidget({super.key, required this.onSelected, this.onCancel});
+  const SleepTimerWidget({
+    super.key,
+    required this.onSelected,
+    this.onCancel,
+    this.initialOption,
+  });
 
   @override
   State<SleepTimerWidget> createState() => _SleepTimerWidgetState();
@@ -16,6 +22,12 @@ class _SleepTimerWidgetState extends State<SleepTimerWidget> {
   SleepOption? _selectedOptions;
 
   final List<SleepOption> _options = sleepOptions;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedOptions = widget.initialOption;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +45,7 @@ class _SleepTimerWidgetState extends State<SleepTimerWidget> {
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
               title: const Text(
-                'Máy hẹn giờ',
+                'Hẹn Giờ',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -42,7 +54,6 @@ class _SleepTimerWidgetState extends State<SleepTimerWidget> {
               ),
             ),
 
-            // const SizedBox(height: 16),
             ..._options.map((option) {
               final selected = _selectedOptions == option;
               return ListTile(
@@ -56,7 +67,7 @@ class _SleepTimerWidgetState extends State<SleepTimerWidget> {
                         color: Colors.white,
                         fontWeight: selected
                             ? FontWeight.w600
-                            : FontWeight.w600,
+                            : FontWeight.w400,
                       ),
                     ),
                     if (selected) const SizedBox(width: 8),
@@ -92,8 +103,6 @@ class _SleepTimerWidgetState extends State<SleepTimerWidget> {
                 ),
               ),
             ),
-
-            //const SizedBox(height: 8),
           ],
         ),
       ),

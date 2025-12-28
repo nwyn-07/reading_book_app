@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reading_book_app/core/models/Chapter.dart';
+import 'package:reading_book_app/core/models/Book.dart';
+import 'package:reading_book_app/core/stores/AudioStore.dart';
 import 'package:reading_book_app/core/stores/ChapterStore.dart';
 
 class ChapterScreen extends StatefulWidget {
-  final String storyId;
-  final String storyTitle;
+  final Book story;
 
-  const ChapterScreen({
-    super.key,
-    required this.storyId,
-    required this.storyTitle,
-  });
+  const ChapterScreen({super.key, required this.story});
 
   @override
   State<ChapterScreen> createState() => _ChapterScreenState();
@@ -22,8 +19,10 @@ class _ChapterScreenState extends State<ChapterScreen> {
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ChapterStore>().fetchChapters(widget.storyId);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final chapterStore = context.read<ChapterStore>();
+      await chapterStore.fetchChapters(widget.story.id);
+      context.read<AudioStore>().setChapters(chapterStore.chapters);
     });
   }
 
@@ -31,7 +30,7 @@ class _ChapterScreenState extends State<ChapterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.storyTitle),
+        title: Text(widget.story.title),
         backgroundColor: Colors.black,
       ),
       body: Consumer<ChapterStore>(
@@ -50,7 +49,7 @@ class _ChapterScreenState extends State<ChapterScreen> {
 
           return ListView.separated(
             itemCount: store.chapters.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
+            separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (_, index) {
               final Chapter chapter = store.chapters[index];
 
@@ -63,13 +62,11 @@ class _ChapterScreenState extends State<ChapterScreen> {
                 subtitle: Text(_formatDuration(chapter.durationSeconds)),
                 trailing: const Icon(Icons.play_arrow),
                 onTap: () {
-                  Navigator.of(context).pushNamed(
-                    '/audio',
-                    arguments: {
-                      'storyTitle': widget.storyTitle,
-                      'chapter': chapter,
-                    },
-                  );
+                  final audio = context.read<AudioStore>();
+
+                  audio.playChapter(story: widget.story, chapter: chapter);
+
+                  Navigator.of(context).pushNamed('/audio');
                 },
               );
             },
