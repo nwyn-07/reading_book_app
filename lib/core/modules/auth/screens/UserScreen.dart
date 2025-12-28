@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:provider/provider.dart';
+import 'package:reading_book_app/core/stores/AuthStore.dart';
+import 'package:reading_book_app/core/stores/StoryStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
 import 'package:reading_book_app/core/theme/AppTextStyles.dart';
 
@@ -18,8 +21,20 @@ class _UserScreanState extends State<UserScreen> {
     {'label': 'Tải xuống', 'icon': 'assets/icons/download.svg'},
   ];
 
+  Future<void> _handleLogout() async {
+    await DefaultCacheManager().emptyCache();
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+
+    context.read<StoryStore>().clear();
+
+    await context.read<AuthStore>().logout();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthStore>();
+    final userName = auth.user?['fullName'] ?? 'Người dùng';
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -69,7 +84,7 @@ class _UserScreanState extends State<UserScreen> {
                               ),
                             ),
                             Text(
-                              'Ba chị em',
+                              userName,
                               style: AppTextStyles.body.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w300,
@@ -153,14 +168,7 @@ class _UserScreanState extends State<UserScreen> {
                     height: 52,
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        await DefaultCacheManager().emptyCache();
-                        PaintingBinding.instance.imageCache.clear();
-                        PaintingBinding.instance.imageCache.clearLiveImages();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Đã xoá ảnh khỏi cache'),
-                          ),
-                        );
+                        _handleLogout();
                       },
                       icon: SvgPicture.asset(
                         'assets/icons/log-out.svg',
@@ -171,7 +179,7 @@ class _UserScreanState extends State<UserScreen> {
                         ),
                       ),
                       label: Text(
-                        'Xoá cache ảnh',
+                        'Đăng xuất',
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.error,
                         ),

@@ -18,7 +18,7 @@ class AppColors {
    * ===================== */
 
   /// Background chính (gradient nền tối)
-  static const Color background = Color(0xFF0F102A);
+  static const Color background = Color.fromARGB(255, 15, 10, 32);
 
   /// Nền card / section
   static const Color surface = Color(0xFF1B1D3A);
