@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:reading_book_app/core/cache/BookCacheImageManager.dart';
 import 'package:reading_book_app/core/models/Book.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
 import 'package:reading_book_app/core/theme/AppTextStyles.dart';
@@ -35,6 +36,8 @@ class BookCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: CachedNetworkImage(
               imageUrl: book.coverURL,
+              cacheManager: BookImageCacheManager(),
+
               width: double.infinity,
               height: 180,
               fit: BoxFit.cover,

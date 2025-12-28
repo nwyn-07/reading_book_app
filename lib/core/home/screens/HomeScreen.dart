@@ -58,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Chào buổi tối', style: AppTextStyles.h2),
+                        Text('Chào buổi sáng', style: AppTextStyles.h2),
                         Text(
                           'Chúc bạn một ngày tốt lành 🌙',
                           style: AppTextStyles.caption,
