@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:reading_book_app/core/auth/screens/UserScreen.dart';
 import 'package:reading_book_app/core/home/screens/HomeScreen.dart';
 import 'package:reading_book_app/core/widgets/BottomNavBar.dart';
 
@@ -12,7 +13,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
 
-  final _pages = const [HomeScreen(), HomeScreen(), HomeScreen(), HomeScreen()];
+  final _pages = const [HomeScreen(), HomeScreen(), HomeScreen(), UserScreen()];
 
   @override
   Widget build(BuildContext context) {
