@@ -29,7 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          /// ===== MAIN CONTENT =====
           Consumer<StoryStore>(
             builder: (context, store, _) {
               if (!store.isInitialized || store.isLoading) {
@@ -59,6 +58,9 @@ class _HomeScreenState extends State<HomeScreen> {
               final books = store.stories;
 
               return RefreshIndicator(
+                color: Colors.white,
+                backgroundColor: Colors.black.withOpacity(0.7),
+                displacement: 40,
                 onRefresh: () async {
                   await context.read<StoryStore>().fetchStories(refresh: true);
                 },
