@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
-import 'package:reading_book_app/core/services/audio/AudioService.dart';
+import 'package:reading_book_app/core/stores/AudioStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
 
 class MiniPlayer extends StatelessWidget {
@@ -9,13 +9,13 @@ class MiniPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AudioService>(
+    return Consumer<AudioStore>(
       builder: (_, audio, _) {
         if (!audio.isMiniVisible || audio.currentChapter == null) {
           return const SizedBox.shrink();
         }
 
-        final storyTitle = audio.currentStory ?? '';
+        final story = audio.currentStory!;
         final chapter = audio.currentChapter!;
         final player = audio.player;
 
@@ -24,7 +24,7 @@ class MiniPlayer extends StatelessWidget {
             Navigator.pushNamed(
               context,
               '/audio',
-              arguments: {'storyTitle': storyTitle, 'chapter': chapter},
+              arguments: {'story': story, 'chapter': chapter},
             );
           },
           child: Container(
@@ -44,7 +44,7 @@ class MiniPlayer extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        storyTitle,
+                        story.title,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:reading_book_app/core/models/Chapter.dart';
-
+import 'package:reading_book_app/core/models/Book.dart';
 import 'package:reading_book_app/core/modules/MainShell.dart';
 import 'package:reading_book_app/core/modules/audio/screens/AudioScreen.dart';
 import 'package:reading_book_app/core/modules/auth/screens/SplashScreen.dart';
 import 'package:reading_book_app/core/modules/chapter/ChapterScreen.dart';
-import 'package:reading_book_app/core/services/audio/AudioService.dart';
+import 'package:reading_book_app/core/stores/AudioStore.dart';
 import 'package:reading_book_app/core/stores/ChapterStore.dart';
+import 'package:reading_book_app/core/stores/DownloadStore.dart';
+import 'package:reading_book_app/core/stores/LibraryStore.dart';
 import 'package:reading_book_app/core/utils/Utils.dart';
 
 import 'package:reading_book_app/core/stores/AuthStore.dart';
@@ -21,7 +22,9 @@ void main() {
         ChangeNotifierProvider(create: (_) => AuthStore()..init()),
         ChangeNotifierProvider(create: (_) => StoryStore()),
         ChangeNotifierProvider(create: (_) => ChapterStore()),
-        ChangeNotifierProvider(create: (_) => AudioService()),
+        ChangeNotifierProvider(create: (_) => AudioStore()),
+        ChangeNotifierProvider(create: (_) => LibraryStore()),
+        ChangeNotifierProvider(create: (_) => DownloadStore()),
       ],
       child: const MyApp(),
     ),
@@ -44,25 +47,14 @@ class MyApp extends StatelessWidget {
 
           routes: {
             '/home': (_) => MainShell(),
-            '/audio': (context) {
-              final args =
-                  ModalRoute.of(context)!.settings.arguments
-                      as Map<dynamic, dynamic>;
-
-              final String storyTitle = args['storyTitle'] as String;
-              final Chapter chapter = args['chapter'] as Chapter;
-
-              return AudioScreen(storyTitle: storyTitle, chapter: chapter);
-            },
+            '/audio': (_) => AudioScreen(),
             '/chapter': (context) {
               final args =
                   ModalRoute.of(context)!.settings.arguments
                       as Map<String, dynamic>;
+              final Book story = args['story'] as Book;
 
-              final String storyId = args['storyId'] as String;
-              final String storyTitle = args['storyTitle'] as String;
-
-              return ChapterScreen(storyId: storyId, storyTitle: storyTitle);
+              return ChapterScreen(story: story);
             },
           },
         );

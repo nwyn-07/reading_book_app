@@ -18,10 +18,9 @@ class BookCard extends StatelessWidget {
       height: 180,
       child: GestureDetector(
         onTap: () => {
-          Navigator.of(context).pushNamed(
-            '/chapter',
-            arguments: {'storyId': book.id, 'storyTitle': book.title},
-          ),
+          Navigator.of(
+            context,
+          ).pushNamed('/chapter', arguments: {'story': book}),
         },
         child: Stack(
           children: [
@@ -69,7 +68,6 @@ class BookCard extends StatelessWidget {
               bottom: 12,
               child: Row(
                 children: [
-                  /// 👇 QUAN TRỌNG
                   Expanded(
                     child: Text(
                       book.title,

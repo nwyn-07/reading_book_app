@@ -31,16 +31,16 @@ class Endpoint {
   /// /api/library
   /// =========================
   static const String library = "$api/library";
-  static const String libraryAdd = "$api/library/add";
-  static const String libraryRemove = "$api/library/remove";
+  static const String libraryAdd = "$api/library";
+  static const String libraryRemove = "$api/library";
 
   /// =========================
   /// LibraryStoryController
   /// /api/library-story
   /// =========================
-  static const String libraryStories = "$api/library-story";
-  static const String libraryStoryAdd = "$api/library-story/add";
-  static const String libraryStoryRemove = "$api/library-story/remove";
+  static const String libraryStories = "$api/library/story/list";
+  static const String libraryStoryAdd = "$api/library/story";
+  static const String libraryStoryRemove = "$api/library/story";
 
   /// =========================
   /// BookmarkController
