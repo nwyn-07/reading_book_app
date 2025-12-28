@@ -30,7 +30,6 @@ class _AudioScreenState extends State<AudioScreen> {
     super.initState();
     _audio = context.read<AudioStore>();
 
-    /// đảm bảo load thư viện yêu thích
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<LibraryStore>().fetchLibraries();
     });
@@ -114,9 +113,24 @@ class _AudioScreenState extends State<AudioScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      GestureDetector(
-                        onTap: audio.hasPrevious ? audio.playPrevious : null,
-                        child: _icon('previous-stroke-rounded.svg'),
+                      Consumer<AudioStore>(
+                        builder: (context, audioStore, _) {
+                          final hasPrevious = audioStore.hasPrevious;
+                          return GestureDetector(
+                            onTap: hasPrevious ? audioStore.playPrevious : null,
+                            child: SvgPicture.asset(
+                              'assets/icons/previous-stroke-rounded.svg',
+                              width: 30,
+                              colorFilter: ColorFilter.mode(
+                                hasPrevious
+                                    ? AppColors
+                                          .textPrimary // Có thể nhấn
+                                    : AppColors.iconInactive, // Không thể nhấn
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          );
+                        },
                       ),
 
                       GestureDetector(
@@ -133,9 +147,23 @@ class _AudioScreenState extends State<AudioScreen> {
                         ),
                       ),
 
-                      GestureDetector(
-                        onTap: audio.hasNext ? audio.playNext : null,
-                        child: _icon('next-stroke-rounded.svg'),
+                      Consumer<AudioStore>(
+                        builder: (context, audioStore, _) {
+                          final hasNext = audioStore.hasNext;
+                          return GestureDetector(
+                            onTap: hasNext ? audioStore.playNext : null,
+                            child: SvgPicture.asset(
+                              'assets/icons/next-stroke-rounded.svg',
+                              width: 30,
+                              colorFilter: ColorFilter.mode(
+                                hasNext
+                                    ? AppColors.textPrimary
+                                    : AppColors.iconInactive,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),

@@ -115,9 +115,6 @@ class _LibraryPickerSheetState extends State<LibraryPickerSheet> {
     }
   }
 
-  /// =========================
-  /// TẠO THƯ VIỆN MỚI DIALOG
-  /// =========================
   void _showCreateLibraryDialog() {
     final controller = TextEditingController();
     final libraryStore = context.read<LibraryStore>();

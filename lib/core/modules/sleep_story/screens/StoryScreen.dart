@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:reading_book_app/core/models/StoryCategory.dart';
 import 'package:reading_book_app/core/modules/home/components/MiniPlayer.dart';
 import 'package:reading_book_app/core/modules/sleep_story/components/StoryCategory.dart';
+import 'package:reading_book_app/core/stores/AudioStore.dart';
 import 'package:reading_book_app/core/stores/StoryStore.dart';
 import 'package:reading_book_app/core/models/Book.dart';
 import 'package:reading_book_app/core/theme/AppTextStyles.dart';
+import 'package:reading_book_app/core/theme/AppColors.dart'; // Thêm import AppColors
 
 class StoryScreen extends StatefulWidget {
   const StoryScreen({super.key});
@@ -19,8 +21,8 @@ class _StoryScreenState extends State<StoryScreen> {
   late List<StoryCategory> storyCategories;
   String selectedCategory = 'ALL';
 
-  // Thêm ScrollController để kiểm soát scroll behavior
   final ScrollController _scrollController = ScrollController();
+  bool _showScrollToTopButton = false;
 
   @override
   void initState() {
@@ -31,12 +33,39 @@ class _StoryScreenState extends State<StoryScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<StoryStore>().fetchStories(refresh: true);
     });
+
+    _scrollController.addListener(_scrollListener);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.offset > 300) {
+      if (!_showScrollToTopButton) {
+        setState(() {
+          _showScrollToTopButton = true;
+        });
+      }
+    } else {
+      if (_showScrollToTopButton) {
+        setState(() {
+          _showScrollToTopButton = false;
+        });
+      }
+    }
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
   }
 
   List<Book> _filterStories(List<Book> stories) {
@@ -90,6 +119,10 @@ class _StoryScreenState extends State<StoryScreen> {
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _handleRefresh,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              AppColors.primary, // Sử dụng màu từ AppColors
+                        ),
                         child: const Text('Thử lại'),
                       ),
                     ],
@@ -185,7 +218,13 @@ class _StoryScreenState extends State<StoryScreen> {
                                 const SizedBox(height: 16),
                                 ElevatedButton(
                                   onPressed: _handleRefresh,
-                                  child: const Text('Tải lại'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                  ),
+                                  child: const Text(
+                                    'Tải lại',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ],
                             ),
@@ -213,6 +252,10 @@ class _StoryScreenState extends State<StoryScreen> {
                                 decoration: BoxDecoration(
                                   color: Colors.black.withOpacity(0.6),
                                   borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: AppColors.primary.withOpacity(0.3),
+                                    width: 1,
+                                  ),
                                 ),
                                 alignment: Alignment.center,
                                 padding: const EdgeInsets.all(12),
@@ -247,6 +290,24 @@ class _StoryScreenState extends State<StoryScreen> {
           ),
 
           const Align(alignment: Alignment.bottomCenter, child: MiniPlayer()),
+
+          if (_showScrollToTopButton)
+            Consumer<AudioStore>(
+              builder: (context, audioStore, child) => Positioned(
+                bottom: audioStore.isMiniVisible ? 100 : 40,
+                right: 20,
+                child: FloatingActionButton(
+                  backgroundColor: AppColors.primary.withOpacity(0.5),
+                  foregroundColor: Colors.white,
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  onPressed: _scrollToTop,
+                  child: const Icon(Icons.arrow_upward_rounded, size: 30),
+                ),
+              ),
+            ),
         ],
       ),
     );
