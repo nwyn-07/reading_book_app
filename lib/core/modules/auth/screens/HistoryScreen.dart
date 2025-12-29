@@ -85,7 +85,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   );
                 }
 
-                final storyStore = context.read<StoryStore>();
                 final audioStore = context.read<AudioStore>();
                 final chapterStore = context.read<ChapterStore>();
 
