@@ -75,6 +75,13 @@ class _HistoryscreenState extends State<HistoryScreen> {
                       pinned: true,
                       backgroundColor: AppColors.background,
                       elevation: 0,
+                      leading: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: Colors.white, // màu icon back
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
                       title: Text(
                         'Lịch sử',
                         style: TextStyle(

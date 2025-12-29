@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:reading_book_app/core/modules/library/screens/LibraryScreen.dart';
-import 'package:reading_book_app/core/modules/auth/screens/PlaylistScreen.dart';
 import 'package:reading_book_app/core/modules/auth/screens/UserScreen.dart';
 import 'package:reading_book_app/core/modules/home/screens/HomeScreen.dart';
 import 'package:reading_book_app/core/modules/sleep_story/screens/StoryScreen.dart';

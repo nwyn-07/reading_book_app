@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:http/http.dart';
 import 'package:provider/provider.dart';
-import 'package:reading_book_app/core/modules/library/sheet/LibraryPickerSheet.dart';
 import 'package:reading_book_app/core/stores/LibraryStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
 

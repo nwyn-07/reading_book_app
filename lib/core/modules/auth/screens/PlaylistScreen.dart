@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import 'package:reading_book_app/core/models/Library.dart';
 import 'package:reading_book_app/core/models/LibraryStory.dart';
-import 'package:reading_book_app/core/modules/library/sheet/LibraryPickerSheet.dart';
-import 'package:reading_book_app/core/stores/AudioStore.dart';
 import 'package:reading_book_app/core/stores/LibraryStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
 
@@ -112,6 +108,13 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                       pinned: true,
                       backgroundColor: AppColors.background,
                       elevation: 0,
+                      leading: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: Colors.white, // màu icon back
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
                       title: Text(
                         'Yêu thích',
                         style: TextStyle(

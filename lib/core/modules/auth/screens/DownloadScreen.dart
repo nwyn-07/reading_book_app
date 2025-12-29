@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:reading_book_app/core/models/Chapter.dart';
 import 'package:reading_book_app/core/stores/LibraryStore.dart';
+import 'package:reading_book_app/core/stores/DownloadStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
 
 class DownloadScreen extends StatefulWidget {
@@ -43,13 +45,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
     );
   }
 
-  final List<Map<String, String>> mockStories = List.generate(
-    30,
-    (index) => {
-      'image': 'assets/images/bg.jpg', // ảnh mẫu
-      'title': 'Truyện  ${index + 1}',
-    },
-  );
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,11 +55,13 @@ class _DownloadScreenState extends State<DownloadScreen> {
             color: Colors.white,
             backgroundColor: Colors.black.withOpacity(0.7),
             displacement: 40,
-            onRefresh: () => context.read<LibraryStore>().fetchLibraries(),
-            child: Consumer<LibraryStore>(
-              builder: (_, lib, _) {
-                // final stories = lib.libraries;
-                final stories = mockStories;
+            onRefresh: () async {
+              // Refresh store nếu cần
+              context.read<DownloadStore>().notifyListeners();
+            },
+            child: Consumer<DownloadStore>(
+              builder: (_, downloadStore, _) {
+                final downloadedIds = downloadStore.downloadedIds;
                 return CustomScrollView(
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -74,6 +71,13 @@ class _DownloadScreenState extends State<DownloadScreen> {
                       pinned: true,
                       backgroundColor: AppColors.background,
                       elevation: 0,
+                      leading: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: Colors.white, // màu icon back
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
                       title: Text(
                         'Tải xuống',
                         style: TextStyle(
@@ -84,7 +88,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                       ),
                     ),
 
-                    if (stories.isEmpty) ...{
+                    if (downloadedIds.isEmpty) ...{
                       SliverFillRemaining(
                         hasScrollBody: false,
                         child: Container(
@@ -109,7 +113,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
                     else
                       SliverList(
                         delegate: SliverChildBuilderDelegate((context, index) {
-                          final story = stories[index];
+                          final chapterId = downloadedIds[index];
+                          final chapter = downloadStore.getChapterInfo(
+                            chapterId,
+                          );
 
                           return Column(
                             children: [
@@ -120,13 +127,12 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                 ),
                                 child: Row(
                                   children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.asset(
-                                        story['image']!,
-                                        width: 56,
-                                        height: 56,
-                                        fit: BoxFit.cover,
+                                    Container(
+                                      width: 56,
+                                      height: 56,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.surface,
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                     ),
 
@@ -134,7 +140,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
 
                                     Expanded(
                                       child: Text(
-                                        story['title']!,
+                                        chapter?.title ?? 'Chapter $chapterId',
                                         style: TextStyle(
                                           color: AppColors.textPrimary,
                                           fontSize: 17,
@@ -159,7 +165,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                               ),
                             ],
                           );
-                        }, childCount: stories.length),
+                        }, childCount: downloadedIds.length),
                       ),
                   ],
                 );

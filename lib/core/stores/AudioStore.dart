@@ -9,6 +9,9 @@ import 'package:path_provider/path_provider.dart';
 class AudioStore extends ChangeNotifier {
   final AudioPlayer _player = AudioPlayer();
   final Dio _dio = Dio();
+  Map<DateTime, double> _listenedHours = {};
+  DateTime? _currentDay;
+  Duration _lastPosition = Duration.zero;
 
   Book? currentStory;
   Chapter? currentChapter;
@@ -55,6 +58,7 @@ class AudioStore extends ChangeNotifier {
         playNext();
       }
     });
+    initTracking();
   }
 
   void setChapters(List<Chapter> chapters) {
@@ -191,6 +195,58 @@ class AudioStore extends ChangeNotifier {
       await audioDir.create(recursive: true);
     }
     return File('${audioDir.path}/$chapterId.mp3');
+  }
+
+  void initTracking() {
+    _player.positionStream.listen((p) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      if (_currentDay == null || _currentDay != today) {
+        _currentDay = today;
+        _lastPosition = p;
+        _listenedHours.putIfAbsent(today, () => 0.0);
+      } else {
+        final diff = (p - _lastPosition).inMinutes / 60.0;
+        if (diff > 0) {
+          _listenedHours[today] = (_listenedHours[today] ?? 0.0) + diff;
+          _lastPosition = p;
+          notifyListeners();
+        }
+      }
+    });
+  }
+
+  List<double> getWeeklyHours() {
+    final now = DateTime.now();
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1)); // Thứ 2
+
+    return List.generate(7, (i) {
+      final day = DateTime(
+        startOfWeek.year,
+        startOfWeek.month,
+        startOfWeek.day + i,
+      );
+      return _listenedHours[day] ?? 0.0;
+    });
+  }
+
+  /// Fake dữ liệu tuần này cho test chart
+  void fakeWeeklyData() {
+    final now = DateTime.now();
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1)); // Thứ 2
+
+    for (int i = 0; i < 7; i++) {
+      final day = DateTime(
+        startOfWeek.year,
+        startOfWeek.month,
+        startOfWeek.day + i,
+      );
+      // Tạo số giờ nghe giả, ví dụ 0.5 -> 2.0 giờ mỗi ngày
+      _listenedHours[day] = 2 + i * 0.2;
+    }
+
+    notifyListeners();
   }
 
   @override
