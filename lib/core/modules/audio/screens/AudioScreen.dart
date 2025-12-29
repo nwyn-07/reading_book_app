@@ -219,8 +219,6 @@ class _AudioScreenState extends State<AudioScreen> {
                           final story = context.read<AudioStore>().currentStory;
                           if (story == null) return;
 
-                          context.read<LibraryStore>().fetchLibraries();
-
                           showModalBottomSheet(
                             context: context,
                             isScrollControlled: true,

@@ -38,7 +38,7 @@ class Endpoint {
   /// =========================
   static const String library = "$api/library";
   static const String libraryAdd = "$api/library";
-  static const String libraryRemove = "$api/library";
+  static String libraryRemove(String libraryId) => "$api/library/$libraryId";
 
   /// =========================
   /// LibraryStoryController
