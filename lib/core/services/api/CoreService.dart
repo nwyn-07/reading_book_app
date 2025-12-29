@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
 import 'package:reading_book_app/core/models/Library.dart';
 import 'package:reading_book_app/core/models/LibraryStory.dart';
 import 'package:reading_book_app/core/services/api/Endpoint.dart';
@@ -33,6 +36,34 @@ class CoreServices {
 
   Future<Map<String, dynamic>> me() async {
     final res = await _api.get(Endpoint.me);
+    return res as Map<String, dynamic>;
+  }
+
+  /* =========================
+ * USER
+ * ========================= */
+
+  Future<Map<String, dynamic>> updateProfile({
+    String? fullName,
+    File? avatarFile,
+  }) async {
+    final uri = Uri.parse(Endpoint.updateProfile);
+
+    final request = http.MultipartRequest('PUT', uri);
+
+    if (fullName != null && fullName.isNotEmpty) {
+      request.fields['fullName'] = fullName;
+    }
+
+    if (avatarFile != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath('avatar', avatarFile.path),
+      );
+    }
+
+    // 🚀 GỬI QUA FETCH API (FetchApi sẽ lo auth + response)
+    final res = await _api.put(Endpoint.updateProfile, body: request);
+
     return res as Map<String, dynamic>;
   }
 
@@ -175,9 +206,25 @@ class CoreServices {
   /* =========================
  * HISTORY
  * ========================= */
-  Future<List> history() async {
-    final res = await _api.get(Endpoint.readingHistory);
-    return res as List;
+
+  Future<void> updateHistory({
+    required String chapterId,
+    required int lastPosition,
+    required int totalTimeSeconds,
+  }) async {
+    await _api.post(
+      Endpoint.updateHistory,
+      body: {
+        "chapterId": chapterId,
+        "lastPosition": lastPosition,
+        "totalTimeSeconds": totalTimeSeconds,
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> history() async {
+    final res = await _api.get(Endpoint.historyList);
+    return List<Map<String, dynamic>>.from(res);
   }
 
   Future<void> clearHistory() async {

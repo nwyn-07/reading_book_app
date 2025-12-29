@@ -7,6 +7,7 @@ class ChapterStore extends ChangeNotifier {
 
   List<Chapter> _chapters = [];
   Chapter? _currentChapter;
+  final Map<String, Chapter> _chapterCache = {};
 
   bool _loading = false;
   String? _error;
@@ -27,6 +28,10 @@ class ChapterStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Chapter? getChapterById(String chapterId) {
+    return _chapterCache[chapterId];
+  }
+
   Future<void> fetchChapters(String storyId) async {
     _setLoading(true);
 
@@ -45,16 +50,30 @@ class ChapterStore extends ChangeNotifier {
     }
   }
 
-  Future<void> fetchChapterDetail(String chapterId) async {
+  Future<Chapter?> fetchChapterDetail(String chapterId) async {
+    if (_chapterCache.containsKey(chapterId)) {
+      _currentChapter = _chapterCache[chapterId];
+      return _currentChapter;
+    }
+
     _setLoading(true);
 
     try {
-      final Map<String, dynamic> res = await _api.chapterDetail(chapterId);
+      final res = await _api.chapterDetail(chapterId);
+      final chapter = Chapter.fromJson(res);
 
-      _currentChapter = Chapter.fromJson(res);
+      debugPrint('Fetched chapter detail: ${chapter.id} - ${chapter.title}');
+
+      _chapterCache[chapterId] = chapter;
+      _currentChapter = chapter;
       _error = null;
+
+      notifyListeners();
+
+      return chapter;
     } catch (e) {
       _setError(e.toString());
+      return null;
     } finally {
       _setLoading(false);
     }

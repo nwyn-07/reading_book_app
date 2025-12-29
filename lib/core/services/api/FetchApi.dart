@@ -53,7 +53,19 @@ class FetchApi {
   /// ======================
   /// PUT
   /// ======================
-  Future<dynamic> put(String url, {Map<String, dynamic>? body}) async {
+  Future<dynamic> put(String url, {dynamic body}) async {
+    if (body is http.MultipartRequest) {
+      final headers = await _headers();
+
+      headers.remove('Content-Type');
+
+      body.headers.addAll(headers);
+
+      final streamed = await body.send();
+      final res = await http.Response.fromStream(streamed);
+      return _handleResponse(res);
+    }
+
     final res = await http.put(
       Uri.parse(url),
       headers: await _headers(),
