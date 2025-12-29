@@ -11,14 +11,26 @@ class UserScreen extends StatefulWidget {
   const UserScreen({super.key});
 
   @override
-  State<UserScreen> createState() => _UserScreanState();
+  State<UserScreen> createState() => _UserScreenState();
 }
 
-class _UserScreanState extends State<UserScreen> {
-  final List<Map<String, Object>> menuItems = [
-    {'label': 'Sưu tập', 'icon': 'assets/icons/favorite.svg'},
-    {'label': 'Lịch sử', 'icon': 'assets/icons/history.svg'},
-    {'label': 'Tải xuống', 'icon': 'assets/icons/download.svg'},
+class _UserScreenState extends State<UserScreen> {
+  final List<Map<String, dynamic>> menuItems = [
+    {
+      'label': 'Sưu tập',
+      'icon': 'assets/icons/favorite.svg',
+      'type': 'library',
+    },
+    {
+      'label': 'Lịch sử',
+      'icon': 'assets/icons/history.svg',
+      'route': '/history',
+    },
+    {
+      'label': 'Tải xuống',
+      'icon': 'assets/icons/download.svg',
+      'route': '/download',
+    },
   ];
 
   Future<void> _handleLogout() async {
@@ -116,7 +128,19 @@ class _UserScreanState extends State<UserScreen> {
                           height: 56,
                           child: InkWell(
                             borderRadius: BorderRadius.circular(16),
-                            onTap: () {},
+                            onTap: () {
+                              if (item['type'] == 'library') {
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  '/home',
+                                  (route) => false,
+                                  arguments: {'tab': 2},
+                                );
+                              } else if (item['route'] != null) {
+                                Navigator.pushNamed(context, item['route']);
+                              }
+                            },
+
                             child: Row(
                               children: [
                                 const SizedBox(width: 16),

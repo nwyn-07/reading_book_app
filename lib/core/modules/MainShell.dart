@@ -1,25 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:reading_book_app/core/modules/library/screens/LibraryScreen.dart';
+import 'package:reading_book_app/core/modules/auth/screens/PlaylistScreen.dart';
 import 'package:reading_book_app/core/modules/auth/screens/UserScreen.dart';
 import 'package:reading_book_app/core/modules/home/screens/HomeScreen.dart';
 import 'package:reading_book_app/core/modules/sleep_story/screens/StoryScreen.dart';
 import 'package:reading_book_app/core/widgets/BottomNavBar.dart';
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  final int initialIndex;
+
+  const MainShell({super.key, this.initialIndex = 0});
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell> {
-  int _index = 0;
+  late int _index;
 
   final _pages = const [
     HomeScreen(),
     StoryScreen(),
-    HomeScreen(),
+    LibraryScreen(),
     UserScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialIndex;
+  }
 
   @override
   Widget build(BuildContext context) {

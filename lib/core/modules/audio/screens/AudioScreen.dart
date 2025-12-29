@@ -251,10 +251,15 @@ class _AudioScreenState extends State<AudioScreen> {
                       Consumer<LibraryStore>(
                         builder: (_, lib, _) {
                           final isFav = lib.isFavorite(story.id);
+
                           return GestureDetector(
-                            onTap: () => isFav
-                                ? lib.removeFromFavorite(story.id)
-                                : lib.addToFavorite(story.id),
+                            onTap: () async {
+                              if (isFav) {
+                                await lib.removeFromFavorite(story.id);
+                              } else {
+                                await lib.addToFavorite(story.id);
+                              }
+                            },
                             child: SvgPicture.asset(
                               isFav
                                   ? 'assets/icons/favourite-filled.svg'

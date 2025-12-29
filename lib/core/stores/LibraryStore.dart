@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:reading_book_app/core/models/Library.dart';
+import 'package:reading_book_app/core/models/LibraryStory.dart';
 import 'package:reading_book_app/core/services/api/CoreService.dart';
 
 class LibraryStore extends ChangeNotifier {
@@ -18,7 +19,7 @@ class LibraryStore extends ChangeNotifier {
   String? get error => _error;
 
   List<Library> get libraries => _libraries;
-
+  Set<String> get favoriteStoryIds => _favoriteStoryIds;
   // ===============================
   // INIT
   // ===============================
@@ -127,6 +128,19 @@ class LibraryStore extends ChangeNotifier {
       // rollback
       _favoriteStoryIds.add(storyId);
       notifyListeners();
+    }
+  }
+
+  // ===============================
+  // GET LIBRARY STORIES
+  // ===============================
+  Future<List<LibraryStory>> getLibraryStories(String libraryId) async {
+    try {
+      final res = await _api.libraryStories(libraryId);
+      return res;
+    } catch (e) {
+      debugPrint('Get library stories error: $e');
+      return [];
     }
   }
 }
