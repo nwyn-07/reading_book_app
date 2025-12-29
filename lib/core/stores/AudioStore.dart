@@ -338,4 +338,27 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     _player.dispose();
     super.dispose();
   }
+
+  // Map<String, String> get downloadedChapters =>
+  //     _downloadedChapters.toList().asMap().map(
+  //       (_, id) => MapEntry(id, id), // Hoặc bạn có thể trả về path nếu cần
+  //     );
+
+  List<Chapter> getDownloadedChapters() {
+    final downloaded = <Chapter>[];
+    for (final chapterId in _downloadedChapters) {
+      final chapter = _chapters.firstWhere((c) => c.id == chapterId);
+      downloaded.add(chapter);
+    }
+    return downloaded;
+  }
+
+  Set<String> get downloadedChapterIds => _downloadedChapters;
+
+  // Getter để lấy danh sách Chapter đã tải
+  List<Chapter> get downloadedChapter {
+    return _chapters
+        .where((chapter) => _downloadedChapters.contains(chapter.id))
+        .toList();
+  }
 }

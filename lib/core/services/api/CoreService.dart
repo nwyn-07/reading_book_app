@@ -26,10 +26,14 @@ class CoreServices {
   /* =========================
  * AUTH
  * ========================= */
-  Future<Map<String, dynamic>> register(String email, String password) async {
+  Future<Map<String, dynamic>> register(
+    String email,
+    String password,
+    String fullName,
+  ) async {
     final res = await _api.post(
       Endpoint.register,
-      body: {"email": email, "password": password},
+      body: {"email": email, "password": password, "fullName": fullName},
     );
     return res as Map<String, dynamic>;
   }
