@@ -18,6 +18,12 @@ class Endpoint {
   static const String logout = "$api/auth/logout";
 
   /// =========================
+  /// UserController
+  /// /api/user
+  /// =========================
+  static const String updateProfile = "$api/users/update-profile";
+
+  /// =========================
   /// AdminController
   /// /api/admin
   /// =========================
@@ -54,8 +60,9 @@ class Endpoint {
   /// HistoryController
   /// /api/history
   /// =========================
-  static const String readingHistory = "$api/history";
+  static const String historyList = "$api/history";
   static const String clearHistory = "$api/history/clear";
+  static const String updateHistory = "$api/history";
 
   /// =========================
   /// ReadingController

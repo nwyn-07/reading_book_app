@@ -1,3 +1,5 @@
+import 'package:reading_book_app/core/models/Book.dart';
+
 class Chapter {
   final String id;
   final String title;
@@ -5,6 +7,7 @@ class Chapter {
   final String audioUrl;
   final int chapterIndex;
   final int durationSeconds;
+  final Book story;
 
   Chapter({
     required this.id,
@@ -13,6 +16,7 @@ class Chapter {
     required this.audioUrl,
     required this.chapterIndex,
     required this.durationSeconds,
+    required this.story,
   });
 
   /// =========================
@@ -26,6 +30,7 @@ class Chapter {
       audioUrl: json['audioUrl'] ?? '',
       chapterIndex: json['chapterIndex'] ?? 0,
       durationSeconds: json['durationSeconds'] ?? 0,
+      story: Book.fromJson(json['story'] as Map<String, dynamic>),
     );
   }
 
@@ -39,6 +44,8 @@ class Chapter {
       'content': content,
       'chapterIndex': chapterIndex,
       'durationSeconds': durationSeconds,
+      'audioUrl': audioUrl,
+      'story': story.toJson(),
     };
   }
 }

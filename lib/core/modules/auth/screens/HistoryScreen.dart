@@ -1,25 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:reading_book_app/core/stores/LibraryStore.dart';
+import 'package:reading_book_app/core/stores/ChapterStore.dart';
+
+import 'package:reading_book_app/core/stores/HistoryStore.dart';
+import 'package:reading_book_app/core/stores/StoryStore.dart';
+import 'package:reading_book_app/core/stores/AudioStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
   @override
-  State<HistoryScreen> createState() => _HistoryscreenState();
+  State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryscreenState extends State<HistoryScreen> {
+class _HistoryScreenState extends State<HistoryScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _showScrollToTop = false;
 
   @override
   void initState() {
     super.initState();
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   context.read<LibraryStore>().fetchLibraries();
-    // });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final historyStore = context.read<HistoryStore>();
+      final chapterStore = context.read<ChapterStore>();
+
+      await historyStore.loadHistory();
+
+      for (final h in historyStore.cache.values) {
+        chapterStore.fetchChapterDetail(h.chapterId);
+      }
+    });
+
     _scrollController.addListener(() {
       if (_scrollController.offset > 300 && !_showScrollToTop) {
         setState(() => _showScrollToTop = true);
@@ -43,14 +56,6 @@ class _HistoryscreenState extends State<HistoryScreen> {
     );
   }
 
-  final List<Map<String, String>> mockStories = List.generate(
-    30,
-    (index) => {
-      'image': 'assets/images/bg.jpg', // ảnh mẫu
-      'title': 'Truyện  ${index + 1}',
-    },
-  );
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,89 +66,139 @@ class _HistoryscreenState extends State<HistoryScreen> {
             color: Colors.white,
             backgroundColor: Colors.black.withOpacity(0.7),
             displacement: 40,
-            onRefresh: () => context.read<LibraryStore>().fetchLibraries(),
-            child: Consumer<LibraryStore>(
-              builder: (_, lib, _) {
-                // final stories = lib.libraries;
-                final stories = mockStories;
+            onRefresh: () => context.read<HistoryStore>().loadHistory(),
+            child: Consumer<HistoryStore>(
+              builder: (_, historyStore, __) {
+                final histories = historyStore.cache.values.toList()
+                  ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+                if (histories.isEmpty) {
+                  return CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      _buildAppBar(),
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _buildEmpty(),
+                      ),
+                    ],
+                  );
+                }
+
+                final storyStore = context.read<StoryStore>();
+                final audioStore = context.read<AudioStore>();
+                final chapterStore = context.read<ChapterStore>();
+
                 return CustomScrollView(
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
-                    SliverAppBar(
-                      centerTitle: true,
-                      pinned: true,
-                      backgroundColor: AppColors.background,
-                      elevation: 0,
-                      title: Text(
-                        'Lịch sử',
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    _buildAppBar(),
 
-                    if (stories.isEmpty) ...{
-                      SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: Container(
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final history = histories[index];
+
+                        final chapter = chapterStore.getChapterById(
+                          history.chapterId,
+                        );
+
+                        if (chapter == null) {
+                          return const SizedBox.shrink(); // chờ frame sau
+                        }
+
+                        final progress = history.totalTimeSeconds > 0
+                            ? history.lastPosition / history.totalTimeSeconds
+                            : 0.0;
+
+                        return InkWell(
+                          onTap: () {
+                            audioStore.playChapter(
+                              story: chapter.story,
+                              chapter: chapter,
+                              resumePositionSeconds: history.lastPosition,
+                            );
+                          },
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const SizedBox(height: 20),
-                              Text(
-                                'Chưa có truyện yêu thích',
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                            ],
-                          ),
-                        ),
-                      ),
-                    }
-                    //=====LIST=====
-                    else
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final story = stories[index];
-
-                          return Column(
                             children: [
                               Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
-                                  vertical: 8,
+                                  vertical: 12,
                                 ),
                                 child: Row(
                                   children: [
+                                    // ===== COVER =====
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
-                                      child: Image.asset(
-                                        story['image']!,
-                                        width: 56,
-                                        height: 56,
-                                        fit: BoxFit.cover,
+                                      child:
+                                          chapter.story.coverUrl != null &&
+                                              chapter.story.coverUrl!.isNotEmpty
+                                          ? Image.network(
+                                              chapter.story.coverUrl!,
+                                              width: 56,
+                                              height: 56,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : Container(
+                                              width: 56,
+                                              height: 56,
+                                              color: AppColors.primary
+                                                  .withOpacity(0.2),
+                                              child: Icon(
+                                                Icons.menu_book,
+                                                color: AppColors.primary,
+                                              ),
+                                            ),
+                                    ),
+
+                                    const SizedBox(width: 12),
+
+                                    // ===== INFO =====
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            chapter.story.title,
+                                            style: TextStyle(
+                                              color: AppColors.textPrimary,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            chapter.title,
+                                            style: TextStyle(
+                                              color: AppColors.textSecondary,
+                                              fontSize: 13,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 6),
+
+                                          // ===== PROGRESS =====
+                                          LinearProgressIndicator(
+                                            value: progress,
+                                            minHeight: 4,
+                                            backgroundColor: Colors.white24,
+                                            color: AppColors.primary,
+                                          ),
+                                        ],
                                       ),
                                     ),
 
                                     const SizedBox(width: 12),
 
-                                    Expanded(
-                                      child: Text(
-                                        story['title']!,
-                                        style: TextStyle(
-                                          color: AppColors.textPrimary,
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                                    Icon(
+                                      Icons.play_circle_fill,
+                                      color: AppColors.primary,
+                                      size: 28,
                                     ),
                                   ],
                                 ),
@@ -159,32 +214,80 @@ class _HistoryscreenState extends State<HistoryScreen> {
                                 ),
                               ),
                             ],
-                          );
-                        }, childCount: stories.length),
-                      ),
+                          ),
+                        );
+                      }, childCount: histories.length),
+                    ),
                   ],
                 );
               },
             ),
           ),
-          // ===== SCROLL TO TOP BUTTON =====
+
+          // ===== SCROLL TO TOP =====
           if (_showScrollToTop)
             Positioned(
               bottom: 24,
               right: 16,
               child: FloatingActionButton(
-                backgroundColor: AppColors.primary.withOpacity(0.5),
+                backgroundColor: AppColors.primary.withOpacity(0.7),
                 foregroundColor: Colors.white,
                 elevation: 8,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
                 onPressed: _scrollToTop,
-                child: const Icon(Icons.arrow_upward_rounded, size: 30),
+                child: const Icon(Icons.arrow_upward_rounded),
               ),
             ),
         ],
       ),
+    );
+  }
+
+  // ================= UI PARTS =================
+
+  SliverAppBar _buildAppBar() {
+    return SliverAppBar(
+      centerTitle: true,
+      pinned: true,
+      backgroundColor: AppColors.background,
+      elevation: 0,
+      title: Text(
+        'Lịch sử nghe',
+        style: TextStyle(
+          color: AppColors.textPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmpty() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.history,
+          size: 72,
+          color: AppColors.textSecondary.withOpacity(0.5),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Chưa có lịch sử nghe',
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Các chương bạn đã nghe sẽ xuất hiện ở đây',
+          style: TextStyle(
+            color: AppColors.textSecondary.withOpacity(0.7),
+            fontSize: 13,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }

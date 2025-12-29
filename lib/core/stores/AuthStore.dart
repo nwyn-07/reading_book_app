@@ -32,6 +32,13 @@ class AuthStore extends ChangeNotifier {
     }
   }
 
+  Future<void> updateUserAvatar(String avatarUrl) async {
+    if (_user != null) {
+      _user!['avatarUrl'] = avatarUrl;
+      notifyListeners();
+    }
+  }
+
   Future<void> login(String email, String password) async {
     _setLoading(true);
 

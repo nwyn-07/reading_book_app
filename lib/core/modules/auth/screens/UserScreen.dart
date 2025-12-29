@@ -1,9 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:flutter_svg/svg.dart';
+import 'dart:io';
+
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image_picker/image_picker.dart';
+
 import 'package:provider/provider.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:reading_book_app/core/components/SkeletonBox.dart';
+import 'package:reading_book_app/core/modules/cache/BookCacheImageManager.dart';
 import 'package:reading_book_app/core/stores/AuthStore.dart';
 import 'package:reading_book_app/core/stores/StoryStore.dart';
+import 'package:reading_book_app/core/stores/UserStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
 import 'package:reading_book_app/core/theme/AppTextStyles.dart';
 
@@ -33,28 +42,166 @@ class _UserScreenState extends State<UserScreen> {
     },
   ];
 
+  final ImagePicker _picker = ImagePicker();
+
+  /// =========================
+  /// VIEW AVATAR (FULLSCREEN)
+  /// =========================
+  void _viewAvatar(String imageUrl) {
+    if (imageUrl.isEmpty) return;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black,
+      builder: (_) => GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Center(
+          child: CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.contain),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAvatarSource() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildPickItem(
+                icon: Icons.photo_library,
+                label: 'Chọn từ thư viện',
+                source: ImageSource.gallery,
+              ),
+              _buildPickItem(
+                icon: Icons.camera_alt,
+                label: 'Chụp ảnh',
+                source: ImageSource.camera,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPickItem({
+    required IconData icon,
+    required String label,
+    required ImageSource source,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white),
+      title: Text(label, style: const TextStyle(color: Colors.white)),
+      onTap: () {
+        Navigator.pop(context);
+        _pickAndUpdateAvatar(source);
+      },
+    );
+  }
+
+  Future<void> _pickAndUpdateAvatar(ImageSource source) async {
+    final picked = await _picker.pickImage(
+      source: source,
+      imageQuality: 80,
+      maxWidth: 1024,
+      maxHeight: 1024,
+    );
+
+    if (picked == null) return;
+
+    final file = File(picked.path);
+    final userStore = context.read<UserStore>();
+
+    final success = await userStore.updateProfile(avatarFile: file);
+
+    if (!mounted) return;
+
+    if (success) {
+      // Cập nhật AuthStore với avatar mới
+      final authStore = context.read<AuthStore>();
+      await authStore.updateUserAvatar(userStore.currentUser?.avatarUrl ?? '');
+
+      // Clear cache để load lại hình mới
+      await _clearImageCache();
+
+      // Force rebuild widget
+      setState(() {});
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success ? 'Cập nhật ảnh đại diện thành công' : 'Cập nhật thất bại',
+        ),
+        backgroundColor: success ? Colors.green : Colors.red,
+      ),
+    );
+  }
+
+  Future<void> _clearImageCache() async {
+    try {
+      // Clear flutter image cache
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+
+      // Clear cache manager
+      await DefaultCacheManager().emptyCache();
+
+      // Nếu có custom cache manager cho avatar
+      await BookImageCacheManager().emptyCache();
+    } catch (e) {
+      debugPrint('Error clearing cache: $e');
+    }
+  }
+
   Future<void> _handleLogout() async {
-    await DefaultCacheManager().emptyCache();
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
+    await _clearImageCache();
 
     context.read<StoryStore>().clear();
-
     await context.read<AuthStore>().logout();
+  }
+
+  String _getAvatarUrl(AuthStore auth, UserStore userStore) {
+    final userAvatar = userStore.currentUser?.avatarUrl;
+    if (userAvatar != null && userAvatar.isNotEmpty) {
+      return userAvatar;
+    }
+
+    return auth.user?['avatarUrl'] ?? '';
+  }
+
+  String _getUserName(AuthStore auth, UserStore userStore) {
+    final userName = userStore.currentUser?.fullName;
+    if (userName != null && userName.isNotEmpty) {
+      return userName;
+    }
+
+    return auth.user?['fullName'] ?? 'Người dùng';
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthStore>();
-    final userName = auth.user?['fullName'] ?? 'Người dùng';
+    final userStore = context.watch<UserStore>();
+
+    final avatarUrl = _getAvatarUrl(auth, userStore);
+    final userName = _getUserName(auth, userStore);
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverFillRemaining(
             hasScrollBody: false,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              decoration: const BoxDecoration(
                 image: DecorationImage(
                   image: AssetImage('assets/images/background.png'),
                   fit: BoxFit.cover,
@@ -65,36 +212,67 @@ class _UserScreenState extends State<UserScreen> {
                 children: [
                   Container(
                     height: 200,
-                    alignment: AlignmentGeometry.center,
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(color: Colors.transparent),
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: const BoxDecoration(color: Colors.transparent),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Column(
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Container(
-                                width: 100,
-                                height: 100,
-                                padding: EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(48),
-                                  color: AppColors.primary,
-                                ),
-                                child: SvgPicture.asset(
-                                  'assets/icons/person.svg',
-                                  width: 20,
-                                  height: 20,
-                                  colorFilter: ColorFilter.mode(
-                                    AppColors.iconInactive,
-                                    BlendMode.srcIn,
-                                  ),
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(48),
+                                color: AppColors.primary,
+                              ),
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (avatarUrl.isNotEmpty) {
+                                    _viewAvatar(avatarUrl);
+                                  }
+                                },
+                                onLongPress: _pickAvatarSource,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(52),
+                                      child: auth.user == null
+                                          ? SvgPicture.asset(
+                                              'assets/icons/person.svg',
+                                              width: 24,
+                                              height: 24,
+                                              colorFilter: ColorFilter.mode(
+                                                AppColors.iconInactive,
+                                                BlendMode.srcIn,
+                                              ),
+                                            )
+                                          : _buildAvatarImage(avatarUrl),
+                                    ),
+
+                                    // ⏳ Loading overlay
+                                    if (userStore.isUpdating)
+                                      Container(
+                                        width: 100,
+                                        height: 100,
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.4),
+                                          borderRadius: BorderRadius.circular(
+                                            52,
+                                          ),
+                                        ),
+                                        child: const CircularProgressIndicator(
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             ),
+                            const SizedBox(height: 12),
                             Text(
                               userName,
                               style: AppTextStyles.body.copyWith(
@@ -107,9 +285,10 @@ class _UserScreenState extends State<UserScreen> {
                       ],
                     ),
                   ),
+
                   Container(
                     height: 170,
-                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     decoration: BoxDecoration(
                       color: AppColors.background,
                       borderRadius: BorderRadius.circular(24),
@@ -140,7 +319,6 @@ class _UserScreenState extends State<UserScreen> {
                                 Navigator.pushNamed(context, item['route']);
                               }
                             },
-
                             child: Row(
                               children: [
                                 const SizedBox(width: 16),
@@ -185,14 +363,14 @@ class _UserScreenState extends State<UserScreen> {
                     ),
                   ),
 
-                  SizedBox(height: 50),
+                  const SizedBox(height: 50),
 
                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        _handleLogout();
+                        await _handleLogout();
                       },
                       icon: SvgPicture.asset(
                         'assets/icons/log-out.svg',
@@ -223,6 +401,36 @@ class _UserScreenState extends State<UserScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarImage(String avatarUrl) {
+    if (avatarUrl.isEmpty) {
+      return SvgPicture.asset(
+        'assets/icons/person.svg',
+        width: 24,
+        height: 24,
+        colorFilter: ColorFilter.mode(AppColors.iconInactive, BlendMode.srcIn),
+      );
+    }
+
+    // Thêm timestamp để tránh cache
+    final cacheBusterUrl =
+        '$avatarUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+
+    return CachedNetworkImage(
+      imageUrl: cacheBusterUrl,
+      cacheManager: BookImageCacheManager(),
+      width: 100,
+      height: 100,
+      fit: BoxFit.cover,
+      placeholder: (_, __) => SkeletonBox(width: 100, height: 100),
+      errorWidget: (_, __, ___) => SvgPicture.asset(
+        'assets/icons/person.svg',
+        width: 24,
+        height: 24,
+        colorFilter: ColorFilter.mode(AppColors.iconInactive, BlendMode.srcIn),
       ),
     );
   }
