@@ -379,13 +379,11 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
 
     if (confirmed == true) {
       try {
-        // Gọi API để xóa truyện khỏi thư viện
         await libraryStore.removeStoryFromLibrary(
           libraryId: libraryId,
           storyId: libraryStory.story.id,
         );
 
-        // Refresh the list
         await _loadLibraryStories();
 
         ScaffoldMessenger.of(context).showSnackBar(

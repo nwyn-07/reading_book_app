@@ -48,7 +48,11 @@ class LibraryStore extends ChangeNotifier {
 
       final fav = _libraries.firstWhere(
         (e) => e.name == 'Yêu thích',
-        orElse: () => throw 'Chưa có thư viện Yêu thích',
+        orElse: () =>
+            createLibrary('Yêu thích').then((_) {
+                  return _libraries.firstWhere((e) => e.name == 'Yêu thích');
+                })
+                as Library,
       );
 
       _favoriteLibraryId = fav.id;
@@ -144,16 +148,54 @@ class LibraryStore extends ChangeNotifier {
     required String libraryId,
     required String storyId,
   }) async {
-    await _api.removeStoryFromLibrary(libraryId: libraryId, storyId: storyId);
+    debugPrint(
+      '[LibraryStore] removeStoryFromLibrary → libraryId=$libraryId, storyId=$storyId',
+    );
 
-    _libStories.remove(libraryId);
-    _libStoriesTimestamp.remove(libraryId);
+    // ===== LƯU STATE CŨ ĐỂ ROLLBACK =====
+    final prevStories = _libStories[libraryId];
+    final prevFavoriteIds = Set<String>.from(_favoriteStoryIds);
 
-    if (libraryId == _favoriteLibraryId) {
-      _favoriteStoryIds.remove(storyId);
+    try {
+      // ===== CALL API =====
+      await _api.removeStoryFromLibrary(libraryId: libraryId, storyId: storyId);
+
+      // ===== UPDATE LOCAL STATE =====
+      _libStories.remove(libraryId);
+      _libStoriesTimestamp.remove(libraryId);
+
+      if (libraryId == _favoriteLibraryId) {
+        _favoriteStoryIds.remove(storyId);
+      }
+
+      debugPrint(
+        '[LibraryStore] removeStoryFromLibrary SUCCESS → storyId=$storyId',
+      );
+
+      notifyListeners();
+    } catch (e, stack) {
+      // ===== LOG ERROR =====
+      debugPrint(
+        '[LibraryStore][ERROR] removeStoryFromLibrary FAILED\n'
+        'libraryId=$libraryId\n'
+        'storyId=$storyId\n'
+        'error=$e',
+      );
+      debugPrintStack(stackTrace: stack);
+
+      // ===== ROLLBACK STATE =====
+      if (prevStories != null) {
+        _libStories[libraryId] = prevStories;
+      }
+      _favoriteStoryIds
+        ..clear()
+        ..addAll(prevFavoriteIds);
+
+      notifyListeners();
+
+      // 👉 optional: rethrow nếu UI cần bắt lỗi
+      // rethrow;
     }
-
-    notifyListeners();
   }
 
   Future<void> removeFromFavorite(String storyId) async {

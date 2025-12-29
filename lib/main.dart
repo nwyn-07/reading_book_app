@@ -74,17 +74,12 @@ class MyApp extends StatelessWidget {
           home: _buildHome(auth),
 
           routes: {
-            // ===== MAIN =====
             '/home': (context) {
               final args = ModalRoute.of(context)?.settings.arguments as Map?;
               final int index = args?['tab'] ?? 0;
               return MainShell(initialIndex: index);
             },
-
-            // ===== AUDIO =====
             '/audio': (_) => const AudioScreen(),
-
-            // ===== CHAPTER =====
             '/chapter': (context) {
               final args =
                   ModalRoute.of(context)!.settings.arguments
@@ -92,12 +87,8 @@ class MyApp extends StatelessWidget {
               final Book story = args['story'] as Book;
               return ChapterScreen(story: story);
             },
-
-            // ===== USER =====
             '/history': (_) => const HistoryScreen(),
             '/download': (_) => const DownloadScreen(),
-
-            // ===== PLAYLIST (FAVORITE) =====
             '/playlist': (context) {
               final library =
                   ModalRoute.of(context)?.settings.arguments as Library?;
