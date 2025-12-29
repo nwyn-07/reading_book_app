@@ -506,7 +506,6 @@ class _UserScreenState extends State<UserScreen> {
       );
     }
 
-    // Thêm timestamp để tránh cache
     final cacheBusterUrl =
         '$avatarUrl?t=${DateTime.now().millisecondsSinceEpoch}';
 
