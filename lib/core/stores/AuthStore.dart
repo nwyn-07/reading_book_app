@@ -58,11 +58,11 @@ class AuthStore extends ChangeNotifier {
     }
   }
 
-  Future<void> register(String email, String password) async {
+  Future<void> register(String email, String password, String fullName) async {
     _setLoading(true);
 
     try {
-      await _api.register(email, password);
+      await _api.register(email, password, fullName);
     } finally {
       _setLoading(false);
     }
