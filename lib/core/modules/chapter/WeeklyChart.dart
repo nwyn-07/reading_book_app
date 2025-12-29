@@ -64,7 +64,7 @@ class WeeklyHourChart extends StatelessWidget {
         gridData: FlGridData(
           show: false,
           drawHorizontalLine: true,
-          horizontalInterval: maxY / 5,
+          horizontalInterval: maxY > 0 ? maxY / 5 : 1,
           getDrawingHorizontalLine: (value) =>
               FlLine(color: Colors.white12, strokeWidth: 1),
         ),
