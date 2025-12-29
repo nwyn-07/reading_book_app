@@ -2,15 +2,12 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
-
 import 'package:provider/provider.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:reading_book_app/core/components/SkeletonBox.dart';
 import 'package:reading_book_app/core/modules/cache/BookCacheImageManager.dart';
-import 'package:provider/provider.dart';
 import 'package:reading_book_app/core/modules/chapter/WeeklyChart.dart';
 import 'package:reading_book_app/core/stores/AudioStore.dart';
 import 'package:reading_book_app/core/stores/AuthStore.dart';
@@ -55,11 +52,22 @@ class _UserScreenState extends State<UserScreen> {
 
     showDialog(
       context: context,
-      barrierColor: Colors.black,
-      builder: (_) => GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Center(
-          child: CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.contain),
+      barrierColor: Colors.black.withOpacity(0.9),
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Center(
+            child: InteractiveViewer(
+              maxScale: 3.0,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.contain,
+                cacheManager: BookImageCacheManager(),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -86,6 +94,20 @@ class _UserScreenState extends State<UserScreen> {
                 icon: Icons.camera_alt,
                 label: 'Chụp ảnh',
                 source: ImageSource.camera,
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      'Hủy',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -169,6 +191,10 @@ class _UserScreenState extends State<UserScreen> {
 
     context.read<StoryStore>().clear();
     await context.read<AuthStore>().logout();
+
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    }
   }
 
   String _getAvatarUrl(AuthStore auth, UserStore userStore) {
@@ -200,8 +226,7 @@ class _UserScreenState extends State<UserScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          SliverFillRemaining(
-            hasScrollBody: false,
+          SliverToBoxAdapter(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               decoration: const BoxDecoration(
@@ -288,101 +313,17 @@ class _UserScreenState extends State<UserScreen> {
                       ],
                     ),
                   ),
-
-                  Container(
-                    height: 170,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(48),
-                      color: AppColors.primary,
-                    ),
-                    child: SvgPicture.asset(
-                      'assets/icons/person.svg',
-                      width: 20,
-                      height: 20,
-                      colorFilter: const ColorFilter.mode(
-                        AppColors.iconInactive,
-                        BlendMode.srcIn,
-                      ),
-                      itemBuilder: (context, index) {
-                        final item = menuItems[index];
-
-                        return SizedBox(
-                          height: 56,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: () {
-                              if (item['type'] == 'library') {
-                                Navigator.pushNamedAndRemoveUntil(
-                                  context,
-                                  '/home',
-                                  (route) => false,
-                                  arguments: {'tab': 2},
-                                );
-                              } else if (item['route'] != null) {
-                                Navigator.pushNamed(context, item['route']);
-                              }
-                            },
-                            child: Row(
-                              children: [
-                                const SizedBox(width: 16),
-
-                                SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: SvgPicture.asset(
-                                    item['icon'] as String,
-                                    colorFilter: ColorFilter.mode(
-                                      AppColors.iconActive,
-                                      BlendMode.srcIn,
-                                    ),
-                                  ),
-                                ),
-
-                                const SizedBox(width: 16),
-
-                                Expanded(
-                                  child: Text(
-                                    item['label'] as String,
-                                    style: AppTextStyles.body.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ),
-
-                                // Arrow
-                                const Padding(
-                                  padding: EdgeInsets.only(right: 16),
-                                  child: Icon(
-                                    Icons.chevron_right,
-                                    color: Colors.white38,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    userName,
-                    style: AppTextStyles.body.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w300,
-                    ),
-                  ),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
+          ),
 
-            const SizedBox(height: 16),
-
-            // ===== Chart =====
-            Container(
+          // ===== Chart =====
+          SliverToBoxAdapter(
+            child: Container(
               height: 220,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.background,
@@ -390,7 +331,6 @@ class _UserScreenState extends State<UserScreen> {
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-
                 children: [
                   Row(
                     children: [
@@ -437,12 +377,15 @@ class _UserScreenState extends State<UserScreen> {
                 ],
               ),
             ),
+          ),
 
-            const SizedBox(height: 24),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-            // ===== Menu items =====
-            Container(
+          // ===== Menu items =====
+          SliverToBoxAdapter(
+            child: Container(
               height: 170,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
                 color: AppColors.background,
@@ -510,39 +453,45 @@ class _UserScreenState extends State<UserScreen> {
                 },
               ),
             ),
+          ),
 
-            const SizedBox(height: 50),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _handleLogout,
-                icon: SvgPicture.asset(
-                  'assets/icons/log-out.svg',
-                  width: 22,
-                  colorFilter: ColorFilter.mode(
-                    AppColors.error,
-                    BlendMode.srcIn,
+          // ===== Logout button =====
+          SliverToBoxAdapter(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _handleLogout,
+                  icon: SvgPicture.asset(
+                    'assets/icons/log-out.svg',
+                    width: 22,
+                    colorFilter: ColorFilter.mode(
+                      AppColors.error,
+                      BlendMode.srcIn,
+                    ),
                   ),
-                ),
-                label: Text(
-                  'Đăng xuất',
-                  style: AppTextStyles.body.copyWith(color: AppColors.error),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.background,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                  label: Text(
+                    'Đăng xuất',
+                    style: AppTextStyles.body.copyWith(color: AppColors.error),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.background,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
               ),
             ),
+          ),
 
-            const SizedBox(height: 24),
-          ],
-        ),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        ],
       ),
     );
   }
