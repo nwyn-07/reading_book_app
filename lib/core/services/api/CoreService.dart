@@ -154,8 +154,8 @@ class CoreServices {
     await _api.post(Endpoint.libraryAdd, body: {"name": name});
   }
 
-  Future<void> removeLibrary(String storyId) async {
-    await _api.post(Endpoint.libraryRemove, body: {"storyId": storyId});
+  Future<void> removeLibrary(String libraryId) async {
+    await _api.delete(Endpoint.libraryRemove(libraryId));
   }
 
   Future<List<LibraryStory>> libraryStories(String libraryId) async {

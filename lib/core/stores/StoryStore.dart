@@ -70,18 +70,23 @@ class StoryStore extends ChangeNotifier {
     }
   }
 
-  Future<void> fetchStoryDetail(String storyId) async {
+  Future<Book?> fetchStoryDetail(String storyId) async {
     _setLoading(true);
 
     try {
       final Map<String, dynamic> res = await _api.storyDetail(storyId);
+      final book = Book.fromJson(res);
 
-      _currentStory = Book.fromJson(res);
+      // Cache lại
+      _currentStory = book;
       _setError(null);
+
+      _setLoading(false);
+      return book;
     } catch (e) {
       _setError(e.toString());
-    } finally {
       _setLoading(false);
+      return null;
     }
   }
 

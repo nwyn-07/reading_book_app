@@ -63,7 +63,6 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     _player.positionStream.listen((p) {
       position = p;
 
-      // khởi tạo timer lưu history mỗi 10s
       _historyTimer ??= Timer.periodic(
         const Duration(seconds: 10),
         (_) => _saveHistory(),
@@ -87,8 +86,6 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     });
     initTracking();
   }
-
-  // ================= HISTORY =================
 
   void attachHistoryStore(HistoryStore historyStore) {
     _historyStore = historyStore;

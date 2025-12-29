@@ -98,24 +98,29 @@ class MyApp extends StatelessWidget {
             '/download': (_) => const DownloadScreen(),
 
             // ===== PLAYLIST (FAVORITE) =====
-            '/playlist': (_) {
-              return Builder(
-                builder: (context) {
-                  final libraryStore = context.read<LibraryStore>();
+            '/playlist': (context) {
+              final library =
+                  ModalRoute.of(context)?.settings.arguments as Library?;
 
-                  Library? favoriteLibrary;
-                  try {
-                    favoriteLibrary = libraryStore.libraries.firstWhere(
-                      (lib) => lib.name == 'Yêu thích',
-                    );
-                  } catch (_) {}
+              if (library != null) {
+                return PlaylistScreen(
+                  library: library,
+                  isFavorite: library.name == 'Yêu thích',
+                );
+              }
 
-                  return PlaylistScreen(
-                    library: favoriteLibrary,
-                    isFavorite: true,
-                  );
-                },
-              );
+              final libraryStore = context.read<LibraryStore>();
+              Library? favoriteLibrary;
+
+              try {
+                favoriteLibrary = libraryStore.libraries.firstWhere(
+                  (lib) => lib.name == 'Yêu thích',
+                );
+              } catch (_) {
+                return PlaylistScreen(library: null, isFavorite: true);
+              }
+
+              return PlaylistScreen(library: favoriteLibrary, isFavorite: true);
             },
           },
         );

@@ -32,6 +32,40 @@ class _LibraryscreenState extends State<LibraryScreen> {
     super.dispose();
   }
 
+  Future<bool> _confirmDeleteLibrary(BuildContext context, String name) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppColors.background,
+            title: Text(
+              'Xóa thư viện "$name"',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Text(
+              'Bạn có chắc chắn muốn xóa thư viện này?',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Hủy',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text('Xóa', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,50 +145,94 @@ class _LibraryscreenState extends State<LibraryScreen> {
                             index,
                           ) {
                             final library = libraries[index];
-                            final isFavorite = library.name == 'Yêu thích';
 
-                            return Card(
-                              color: AppColors.surface,
-                              margin: const EdgeInsets.only(bottom: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: BorderSide(
-                                  color: isFavorite
-                                      ? AppColors.accent
-                                      : Colors.transparent,
-                                  width: 2,
+                            final cachedStories = lib.libStories[library.id];
+                            final storyCount = cachedStories?.length ?? 0;
+
+                            debugPrint(
+                              'Library ${library.name} (id: ${library.id}) has $storyCount stories',
+                            );
+
+                            final isFavoriteLib = library.name == 'Yêu thích';
+
+                            return Dismissible(
+                              key: ValueKey(library.id),
+                              direction: isFavoriteLib
+                                  ? DismissDirection.none
+                                  : DismissDirection.endToStart,
+                              confirmDismiss: (_) async {
+                                return await _confirmDeleteLibrary(
+                                  context,
+                                  library.name,
+                                );
+                              },
+                              onDismissed: (_) async {
+                                await context
+                                    .read<LibraryStore>()
+                                    .deleteLibrary(library.id);
+                              },
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.redAccent,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.delete,
+                                  color: Colors.white,
+                                  size: 28,
                                 ),
                               ),
-                              child: ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: isFavorite
-                                        ? AppColors.accent.withOpacity(0.2)
-                                        : AppColors.surface,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Image.asset(
-                                    'assets/images/bg.jpg',
-                                    width: 56,
-                                    height: 56,
-                                    fit: BoxFit.cover,
-                                  ),
+                              child: Card(
+                                color: AppColors.surface,
+                                margin: const EdgeInsets.only(bottom: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                title: Text(
-                                  library.name,
-                                  style: TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontWeight: FontWeight.w500,
+                                child: ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surface,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: SvgPicture.asset(
+                                      'assets/icons/library.svg',
+                                      width: 24,
+                                      height: 24,
+                                      colorFilter: ColorFilter.mode(
+                                        isFavoriteLib
+                                            ? Colors.red
+                                            : AppColors.primary,
+                                        BlendMode.srcIn,
+                                      ),
+                                    ),
                                   ),
+                                  title: Text(
+                                    library.name,
+                                    style: TextStyle(
+                                      color: isFavoriteLib
+                                          ? Colors.red
+                                          : AppColors.textPrimary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '$storyCount truyện',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    Navigator.of(context).pushNamed(
+                                      '/playlist',
+                                      arguments: library,
+                                    );
+                                  },
                                 ),
-
-                                onTap: () {
-                                  Navigator.of(context).pushNamed(
-                                    '/playlist',
-                                    arguments: {'library': library},
-                                  );
-                                },
                               ),
                             );
                           }, childCount: libraries.length),
@@ -184,13 +262,26 @@ class _LibraryscreenState extends State<LibraryScreen> {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
             return AlertDialog(
-              title: const Text('Tạo thư viện'),
+              backgroundColor: AppColors.background,
+              title: Text(
+                'Tạo thư viện',
+                style: TextStyle(color: AppColors.textPrimary),
+              ),
               content: TextField(
                 controller: controller,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Tên thư viện',
-                  border: OutlineInputBorder(),
+                  hintStyle: TextStyle(color: AppColors.textSecondary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppColors.primary),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppColors.primary, width: 2),
+                  ),
                 ),
+                style: TextStyle(color: AppColors.textPrimary),
                 autofocus: true,
               ),
               actions: [
@@ -199,15 +290,29 @@ class _LibraryscreenState extends State<LibraryScreen> {
                     _isDialogOpen = false;
                     Navigator.of(dialogContext).pop();
                   },
-                  child: const Text('Huỷ'),
+                  child: Text(
+                    'Huỷ',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () async {
                     final name = controller.text.trim();
                     if (name.isEmpty) {
                       ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content: Text('Vui lòng nhập tên thư viện'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (name == 'Yêu thích' || name == 'Favorites') {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        SnackBar(
+                          content: Text('Không thể tạo thư viện với tên này'),
+                          backgroundColor: Colors.red,
                         ),
                       );
                       return;
@@ -231,7 +336,10 @@ class _LibraryscreenState extends State<LibraryScreen> {
                       }
                     }
                   },
-                  child: const Text('Tạo'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                  child: Text('Tạo', style: TextStyle(color: Colors.white)),
                 ),
               ],
             );

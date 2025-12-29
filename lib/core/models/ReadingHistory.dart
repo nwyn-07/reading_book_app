@@ -12,11 +12,23 @@ class ReadingHistory {
   });
 
   factory ReadingHistory.fromJson(Map<String, dynamic> json) {
+    final lastReadChapter = json['lastReadChapter'];
+
+    if (lastReadChapter == null || lastReadChapter['id'] == null) {
+      throw Exception('History item has no lastReadChapter');
+    }
+
     return ReadingHistory(
-      chapterId: json['chapterId'],
-      lastPosition: json['lastPosition'] ?? 0,
-      totalTimeSeconds: json['totalTimeSeconds'] ?? 0,
-      updatedAt: DateTime.parse(json['updatedAt']),
+      chapterId: lastReadChapter['id'] as String,
+      lastPosition: json['lastPosition'] is int
+          ? json['lastPosition']
+          : int.tryParse('${json['lastPosition']}') ?? 0,
+      totalTimeSeconds: json['totalTimeSeconds'] is int
+          ? json['totalTimeSeconds']
+          : int.tryParse('${json['totalTimeSeconds']}') ?? 0,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : DateTime.now(),
     );
   }
 }

@@ -12,44 +12,30 @@ class HistoryStore extends ChangeNotifier {
   Map<String, ReadingHistory> get cache => _cache;
 
   Future<void> loadHistory() async {
-    print('=== HISTORY STORE: loadHistory() called ===');
     try {
-      print('Calling API: _api.history()');
       final res = await _api.history();
 
-      print('API response type: ${res.runtimeType}');
-      print('API response length: ${res.length}');
-      if (res.isNotEmpty) {
-        print('First item in response: ${res.first}');
-      }
+      // 1️⃣ Parse ra list trước
+      final List<ReadingHistory> list = [];
 
-      _cache.clear();
       for (final item in res) {
         try {
-          final h = ReadingHistory.fromJson(item);
-          print(
-            'Parsed history item: chapterId=${h.chapterId}, lastPosition=${h.lastPosition}, updatedAt=${h.updatedAt}',
-          );
-          _cache[h.chapterId] = h;
+          list.add(ReadingHistory.fromJson(item));
         } catch (e) {
           print('Error parsing history item $item: $e');
         }
       }
 
-      print('Total items in cache after load: ${_cache.length}');
-      print('Cache content:');
-      _cache.forEach((key, value) {
-        print(
-          '  $key: ${value.lastPosition}s/${value.totalTimeSeconds}s (${value.updatedAt})',
-        );
-      });
+      list.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+      _cache.clear();
+      for (final h in list) {
+        _cache[h.chapterId] = h;
+      }
 
       notifyListeners();
-      print('Notified listeners about history update');
     } catch (e) {
-      print('Error in loadHistory: $e');
-      print('Stack trace: ${e.toString()}');
-      rethrow; // Để debug thấy lỗi
+      rethrow;
     }
   }
 
@@ -58,8 +44,6 @@ class HistoryStore extends ChangeNotifier {
     required int lastPosition,
     required int totalTimeSeconds,
   }) {
-    print('HistoryStore: updateHistoryDebounced called for $chapterId');
-    _debounceTimer?.cancel();
     _debounceTimer = Timer(
       const Duration(seconds: 10),
       () => _sendHistory(
@@ -75,7 +59,6 @@ class HistoryStore extends ChangeNotifier {
     required int lastPosition,
     required int totalTimeSeconds,
   }) async {
-    print('HistoryStore: forceUpdate called for $chapterId');
     await _sendHistory(
       chapterId: chapterId,
       lastPosition: lastPosition,
@@ -88,7 +71,6 @@ class HistoryStore extends ChangeNotifier {
     required int lastPosition,
     required int totalTimeSeconds,
   }) async {
-    print('HistoryStore: _sendHistory for $chapterId');
     try {
       await _api.updateHistory(
         chapterId: chapterId,
@@ -104,27 +86,21 @@ class HistoryStore extends ChangeNotifier {
       );
 
       notifyListeners();
-      print('History updated for $chapterId');
-    } catch (e) {
-      print('Error sending history: $e');
-    }
+    } catch (e) {}
   }
 
   int? getResumePosition(String chapterId) {
     final position = _cache[chapterId]?.lastPosition;
-    print('getResumePosition for $chapterId: $position');
     return position;
   }
 
   void clear() {
-    print('HistoryStore: clear() called');
     _cache.clear();
     notifyListeners();
   }
 
   @override
   void dispose() {
-    print('HistoryStore: dispose() called');
     _debounceTimer?.cancel();
     super.dispose();
   }
