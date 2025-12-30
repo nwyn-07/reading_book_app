@@ -120,80 +120,87 @@ class _ChapterScreenState extends State<ChapterScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    SizedBox(
-                                      height: top - 160,
-                                    ), // Adjust based on expanded height
-                                    // Story cover
-                                    Container(
-                                      width: 100,
-                                      height: 140,
-                                      margin: const EdgeInsets.only(bottom: 12),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(12),
-                                        color: AppColors.primary.withOpacity(
-                                          0.1,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(
-                                              0.3,
-                                            ),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
+                                    SizedBox(height: top - 160),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
                                       ),
-                                      child: widget.story.coverUrl.isNotEmpty
-                                          ? ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              child: Image.network(
-                                                widget.story.coverUrl,
-                                                width: 100,
-                                                height: 140,
-                                                fit: BoxFit.cover,
-                                                loadingBuilder: (context, child, loadingProgress) {
-                                                  if (loadingProgress == null)
-                                                    return child;
-                                                  return Center(
-                                                    child: CircularProgressIndicator(
-                                                      value:
-                                                          loadingProgress
-                                                                  .expectedTotalBytes !=
-                                                              null
-                                                          ? loadingProgress
-                                                                    .cumulativeBytesLoaded /
-                                                                loadingProgress
-                                                                    .expectedTotalBytes!
-                                                          : null,
-                                                      color: AppColors.primary,
-                                                    ),
-                                                  );
-                                                },
-                                                errorBuilder:
-                                                    (
-                                                      context,
-                                                      error,
-                                                      stackTrace,
-                                                    ) {
-                                                      return Center(
-                                                        child: Icon(
-                                                          Icons.book,
-                                                          size: 40,
-                                                          color:
-                                                              AppColors.primary,
-                                                        ),
-                                                      );
-                                                    },
+                                      child: Container(
+                                        width: double.infinity,
+                                        height: 150,
+                                        margin: const EdgeInsets.only(
+                                          bottom: 12,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          color: AppColors.primary.withOpacity(
+                                            0.1,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(
+                                                0.3,
                                               ),
-                                            )
-                                          : Center(
-                                              child: Icon(
-                                                Icons.book,
-                                                size: 40,
-                                                color: AppColors.primary,
-                                              ),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 4),
                                             ),
+                                          ],
+                                        ),
+                                        child: widget.story.coverUrl.isNotEmpty
+                                            ? ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                child: Image.network(
+                                                  widget.story.coverUrl,
+                                                  width: 100,
+                                                  height: 140,
+                                                  fit: BoxFit.cover,
+                                                  loadingBuilder: (context, child, loadingProgress) {
+                                                    if (loadingProgress == null)
+                                                      return child;
+                                                    return Center(
+                                                      child: CircularProgressIndicator(
+                                                        value:
+                                                            loadingProgress
+                                                                    .expectedTotalBytes !=
+                                                                null
+                                                            ? loadingProgress
+                                                                      .cumulativeBytesLoaded /
+                                                                  loadingProgress
+                                                                      .expectedTotalBytes!
+                                                            : null,
+                                                        color:
+                                                            AppColors.primary,
+                                                      ),
+                                                    );
+                                                  },
+                                                  errorBuilder:
+                                                      (
+                                                        context,
+                                                        error,
+                                                        stackTrace,
+                                                      ) {
+                                                        return Center(
+                                                          child: Icon(
+                                                            Icons.book,
+                                                            size: 40,
+                                                            color: AppColors
+                                                                .primary,
+                                                          ),
+                                                        );
+                                                      },
+                                                ),
+                                              )
+                                            : Center(
+                                                child: Icon(
+                                                  Icons.book,
+                                                  size: 40,
+                                                  color: AppColors.primary,
+                                                ),
+                                              ),
+                                      ),
                                     ),
 
                                     // Story info

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:reading_book_app/core/stores/ReadingStore.dart';
+import 'package:reading_book_app/core/stores/StatsStore.dart';
 
 import 'package:reading_book_app/core/utils/Utils.dart';
 
@@ -31,20 +33,15 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        // ===== AUTH =====
         ChangeNotifierProvider(create: (_) => AuthStore()..init()),
-
-        // ===== CORE DATA =====
         ChangeNotifierProvider(create: (_) => StoryStore()),
         ChangeNotifierProvider(create: (_) => ChapterStore()),
         ChangeNotifierProvider(create: (_) => LibraryStore()),
         ChangeNotifierProvider(create: (_) => DownloadStore()),
         ChangeNotifierProvider(create: (_) => UserStore()),
-
-        // ===== HISTORY =====
+        ChangeNotifierProvider(create: (_) => StatsStore()),
+        ChangeNotifierProvider(create: (_) => ReadingStore()),
         ChangeNotifierProvider(create: (_) => HistoryStore()),
-
-        // ===== AUDIO (inject HistoryStore) =====
         ChangeNotifierProxyProvider<HistoryStore, AudioStore>(
           create: (_) => AudioStore(),
           update: (_, historyStore, audioStore) {
