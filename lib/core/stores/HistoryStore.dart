@@ -15,7 +15,6 @@ class HistoryStore extends ChangeNotifier {
     try {
       final res = await _api.history();
 
-      // 1️⃣ Parse ra list trước
       final List<ReadingHistory> list = [];
 
       for (final item in res) {
