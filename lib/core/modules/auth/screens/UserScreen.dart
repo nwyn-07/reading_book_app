@@ -2,10 +2,12 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
+
 import 'package:provider/provider.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:reading_book_app/core/components/SkeletonBox.dart';
 import 'package:reading_book_app/core/modules/cache/BookCacheImageManager.dart';
 import 'package:reading_book_app/core/modules/chapter/WeeklyChart.dart';
@@ -52,24 +54,33 @@ class _UserScreenState extends State<UserScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: true, // 👈 cho phép tap ngoài
       barrierColor: Colors.black.withOpacity(0.9),
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.zero,
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Center(
-            child: InteractiveViewer(
-              maxScale: 3.0,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.contain,
-                cacheManager: BookImageCacheManager(),
+      builder: (_) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.pop(context),
               ),
             ),
-          ),
-        ),
-      ),
+
+            Center(
+              child: GestureDetector(
+                onTap: () {}, // chặn tap truyền ra ngoài
+                child: InteractiveViewer(
+                  maxScale: 3,
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -94,20 +105,6 @@ class _UserScreenState extends State<UserScreen> {
                 icon: Icons.camera_alt,
                 label: 'Chụp ảnh',
                 source: ImageSource.camera,
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text(
-                      'Hủy',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  ),
-                ),
               ),
             ],
           ),
@@ -191,10 +188,6 @@ class _UserScreenState extends State<UserScreen> {
 
     context.read<StoryStore>().clear();
     await context.read<AuthStore>().logout();
-
-    if (mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-    }
   }
 
   String _getAvatarUrl(AuthStore auth, UserStore userStore) {
@@ -227,7 +220,8 @@ class _UserScreenState extends State<UserScreen> {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(
+          SliverFillRemaining(
+            hasScrollBody: false,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               // decoration: const BoxDecoration(
@@ -282,7 +276,6 @@ class _UserScreenState extends State<UserScreen> {
                                           : _buildAvatarImage(avatarUrl),
                                     ),
 
-                                    // ⏳ Loading overlay
                                     if (userStore.isUpdating)
                                       Container(
                                         width: 100,
@@ -314,65 +307,171 @@ class _UserScreenState extends State<UserScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-          ),
 
-          // ===== Chart =====
-          SliverToBoxAdapter(
-            child: Container(
-              height: 220,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      SvgPicture.asset(
-                        'assets/icons/chart.svg',
-                        width: 20,
-                        height: 20,
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white,
+                  const SizedBox(height: 8),
+
+                  Container(
+                    height: 220,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+
+                      children: [
+                        Row(
+                          children: [
+                            SvgPicture.asset(
+                              'assets/icons/chart.svg',
+                              width: 20,
+                              height: 20,
+                              colorFilter: const ColorFilter.mode(
+                                Colors.white,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Tuần này',
+                              style: AppTextStyles.body.copyWith(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const Spacer(),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        Divider(
+                          color: Colors.white38,
+                          height: 1,
+                          thickness: 0.6,
+                        ),
+                        const SizedBox(height: 12),
+                        Expanded(
+                          child: Consumer<AudioStore>(
+                            builder: (_, audio, __) {
+                              // Tạo dữ liệu giả sau khi widget được build xong
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (audio.getWeeklyHours().every(
+                                  (e) => e == 0.0,
+                                )) {
+                                  audio.fakeWeeklyData();
+                                }
+                              });
+
+                              final weeklyData = audio.getWeeklyHours();
+                              return WeeklyHourChart(data: weeklyData);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    height: 170,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: ListView.separated(
+                      padding: EdgeInsets.zero,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: menuItems.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        color: Colors.white.withOpacity(0.1),
+                      ),
+                      itemBuilder: (context, index) {
+                        final item = menuItems[index];
+                        return SizedBox(
+                          height: 56,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () {
+                              if (item['type'] == 'library') {
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  '/home',
+                                  (route) => false,
+                                  arguments: {'tab': 2},
+                                );
+                              } else if (item['route'] != null) {
+                                Navigator.pushNamed(context, item['route']);
+                              }
+                            },
+                            child: Row(
+                              children: [
+                                const SizedBox(width: 16),
+                                SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: SvgPicture.asset(
+                                    item['icon'] as String,
+                                    colorFilter: ColorFilter.mode(
+                                      AppColors.iconActive,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    item['label'] as String,
+                                    style: AppTextStyles.body.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.only(right: 16),
+                                  child: Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.white38,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _handleLogout,
+                      icon: SvgPicture.asset(
+                        'assets/icons/log-out.svg',
+                        width: 22,
+                        colorFilter: ColorFilter.mode(
+                          AppColors.error,
                           BlendMode.srcIn,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Tuần này',
+                      label: Text(
+                        'Đăng xuất',
                         style: AppTextStyles.body.copyWith(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppColors.error,
                         ),
                       ),
-                      const Spacer(),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  Divider(color: Colors.white38, height: 1, thickness: 0.6),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: Consumer<AudioStore>(
-                      builder: (_, audio, __) {
-                        // Tạo dữ liệu giả sau khi widget được build xong
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (audio.getWeeklyHours().every((e) => e == 0.0)) {
-                            audio.fakeWeeklyData();
-                          }
-                        });
-
-                        final weeklyData = audio.getWeeklyHours();
-                        return WeeklyHourChart(data: weeklyData);
-                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.background,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -386,7 +485,6 @@ class _UserScreenState extends State<UserScreen> {
           SliverToBoxAdapter(
             child: Container(
               height: 170,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
                 color: AppColors.background,
@@ -457,41 +555,6 @@ class _UserScreenState extends State<UserScreen> {
           ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-          // ===== Logout button =====
-          SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton.icon(
-                  onPressed: _handleLogout,
-                  icon: SvgPicture.asset(
-                    'assets/icons/log-out.svg',
-                    width: 22,
-                    colorFilter: ColorFilter.mode(
-                      AppColors.error,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                  label: Text(
-                    'Đăng xuất',
-                    style: AppTextStyles.body.copyWith(color: AppColors.error),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.background,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
     );
@@ -507,11 +570,10 @@ class _UserScreenState extends State<UserScreen> {
       );
     }
 
-    final cacheBusterUrl =
-        '$avatarUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+    // Thêm timestamp để tránh cache
 
     return CachedNetworkImage(
-      imageUrl: cacheBusterUrl,
+      imageUrl: avatarUrl,
       cacheManager: BookImageCacheManager(),
       width: 100,
       height: 100,

@@ -104,13 +104,11 @@ class _DownloadScreenState extends State<DownloadScreen> {
             final chapterId = parts[1];
             storyFiles.putIfAbsent(storyId, () => []).add(file);
 
-            // Lấy thông tin chapter từ filename và cache file size
             await _addChapterInfo(storyId, chapterId, file);
           }
         }
       }
 
-      // Tạo thông tin cho mỗi story
       for (var entry in storyFiles.entries) {
         final storyId = entry.key;
         final files = entry.value;
@@ -127,11 +125,9 @@ class _DownloadScreenState extends State<DownloadScreen> {
           }
         }
 
-        // Lấy thông tin story từ audioStore nếu có
         String storyTitle = 'Story $storyId';
         String? coverUrl;
 
-        // Cố gắng lấy thông tin story từ audioStore
         if (audioStore.currentStory?.id == storyId) {
           storyTitle = audioStore.currentStory?.title ?? storyTitle;
           coverUrl = audioStore.currentStory?.coverUrl;
@@ -148,14 +144,12 @@ class _DownloadScreenState extends State<DownloadScreen> {
         });
       }
 
-      // Sắp xếp theo thời gian sửa đổi mới nhất
       stories.sort((a, b) {
         final aDate = a['lastModified'] as DateTime? ?? DateTime(0);
         final bDate = b['lastModified'] as DateTime? ?? DateTime(0);
         return bDate.compareTo(aDate);
       });
 
-      // Cache kết quả
       _cachedStories = stories;
     } catch (e) {
       debugPrint('Error getting downloaded stories: $e');
@@ -173,12 +167,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
       _storyChapters[storyId] = [];
     }
 
-    // Lấy file size một lần và cache
     final fileSize = (await file.stat()).size;
     final fileKey = '$storyId-$chapterId';
     _chapterFileSizes[fileKey] = fileSize;
 
-    // Tạo chapter info từ filename
     final filename = p.basenameWithoutExtension(file.path);
     final parts = filename.split('_');
 
@@ -218,7 +210,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
     final filePath = chapterInfo['filePath'] as String;
 
     try {
-      // TODO: Implement play logic
       debugPrint('Playing chapter: $filePath');
       await audioStore.playChapter(
         story: Book(
@@ -268,16 +259,29 @@ class _DownloadScreenState extends State<DownloadScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: const Text('Bạn có chắc chắn muốn xóa toàn bộ truyện này?'),
+        backgroundColor: AppColors.background,
+        title: Text(
+          'Xóa truyện',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Bạn có chắc muốn xóa toan bộ truyện này và tất cả các chương đã tải xuống không?',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+            child: Text(
+              'Hủy',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+            child: Text('Xóa', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -344,16 +348,29 @@ class _DownloadScreenState extends State<DownloadScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa "${chapterInfo['title']}"?'),
+        backgroundColor: AppColors.background,
+        title: Text(
+          'Xóa chương',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Bạn có chắc muốn xóa chương này không?',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+            child: Text(
+              'Hủy',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+            child: Text('Xóa', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -365,11 +382,9 @@ class _DownloadScreenState extends State<DownloadScreen> {
         if (await file.exists()) {
           await file.delete();
 
-          // Xóa khỏi cache file size
           final fileKey = '$storyId-${chapterInfo['id']}';
           _chapterFileSizes.remove(fileKey);
 
-          // Cập nhật danh sách chapters
           if (_storyChapters.containsKey(storyId)) {
             _storyChapters[storyId]!.removeWhere(
               (c) => c['id'] == chapterInfo['id'],
@@ -381,7 +396,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
             }
           }
 
-          // Xóa cache stories để reload
           _cachedStories = null;
 
           if (mounted) {
@@ -648,20 +662,36 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                   return await showDialog<bool>(
                                         context: context,
                                         builder: (context) => AlertDialog(
-                                          title: const Text('Xác nhận xóa'),
-                                          content: const Text(
-                                            'Bạn có chắc chắn muốn xóa toàn bộ truyện này?',
+                                          backgroundColor: AppColors.background,
+                                          title: Text(
+                                            'Xóa truyện',
+                                            style: TextStyle(
+                                              color: AppColors.textPrimary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          content: Text(
+                                            'Bạn có chắc muốn xóa toan bộ truyện này và tất cả các chương đã tải xuống không?',
+                                            style: TextStyle(
+                                              color: AppColors.textSecondary,
+                                            ),
                                           ),
                                           actions: [
                                             TextButton(
                                               onPressed: () =>
                                                   Navigator.pop(context, false),
-                                              child: const Text('Hủy'),
+                                              child: Text(
+                                                'Hủy',
+                                                style: TextStyle(
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                ),
+                                              ),
                                             ),
                                             TextButton(
                                               onPressed: () =>
                                                   Navigator.pop(context, true),
-                                              child: const Text(
+                                              child: Text(
                                                 'Xóa',
                                                 style: TextStyle(
                                                   color: Colors.red,
@@ -769,15 +799,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                                           overflow: TextOverflow
                                                               .ellipsis,
                                                         ),
-                                                      ),
-                                                      Icon(
-                                                        isExpanded
-                                                            ? Icons
-                                                                  .keyboard_arrow_up
-                                                            : Icons
-                                                                  .keyboard_arrow_down,
-                                                        color: AppColors
-                                                            .textSecondary,
                                                       ),
                                                     ],
                                                   ),

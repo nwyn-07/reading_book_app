@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reading_book_app/core/stores/ChapterStore.dart';
-
 import 'package:reading_book_app/core/stores/HistoryStore.dart';
-import 'package:reading_book_app/core/stores/StoryStore.dart';
 import 'package:reading_book_app/core/stores/AudioStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
 
@@ -85,156 +83,53 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   );
                 }
 
-                final audioStore = context.read<AudioStore>();
-                final chapterStore = context.read<ChapterStore>();
-
-                return CustomScrollView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    _buildAppBar(),
-
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final history = histories[index];
-
-                        final chapter = chapterStore.getChapterById(
-                          history.chapterId,
-                        );
-
-                        if (chapter == null) {
-                          return const SizedBox.shrink(); // chờ frame sau
-                        }
-
-                        final progress = history.totalTimeSeconds > 0
-                            ? history.lastPosition / history.totalTimeSeconds
-                            : 0.0;
-
-                        return InkWell(
-                          onTap: () {
-                            audioStore.playChapter(
-                              story: chapter.story,
-                              chapter: chapter,
-                              resumePositionSeconds: history.lastPosition,
+                return Consumer<ChapterStore>(
+                  builder: (_, chapterStore, __) {
+                    return CustomScrollView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        _buildAppBar(),
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final history = histories[index];
+                            final chapter = chapterStore.getChapterById(
+                              history.chapterId,
                             );
-                          },
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                child: Row(
-                                  children: [
-                                    // ===== COVER =====
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child:
-                                          chapter.story.coverUrl != null &&
-                                              chapter.story.coverUrl!.isNotEmpty
-                                          ? Image.network(
-                                              chapter.story.coverUrl!,
-                                              width: 56,
-                                              height: 56,
-                                              fit: BoxFit.cover,
-                                            )
-                                          : Container(
-                                              width: 56,
-                                              height: 56,
-                                              color: AppColors.primary
-                                                  .withOpacity(0.2),
-                                              child: Icon(
-                                                Icons.menu_book,
-                                                color: AppColors.primary,
-                                              ),
-                                            ),
-                                    ),
 
-                                    const SizedBox(width: 12),
+                            if (chapter == null) {
+                              return const SizedBox.shrink();
+                            }
 
-                                    // ===== INFO =====
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            chapter.story.title,
-                                            style: TextStyle(
-                                              color: AppColors.textPrimary,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            chapter.title,
-                                            style: TextStyle(
-                                              color: AppColors.textSecondary,
-                                              fontSize: 13,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 6),
+                            final progress = history.totalTimeSeconds > 0
+                                ? history.lastPosition /
+                                      history.totalTimeSeconds
+                                : 0.0;
 
-                                          // ===== PROGRESS =====
-                                          LinearProgressIndicator(
-                                            value: progress,
-                                            minHeight: 4,
-                                            backgroundColor: Colors.white24,
-                                            color: AppColors.primary,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-
-                                    const SizedBox(width: 12),
-
-                                    Icon(
-                                      Icons.play_circle_fill,
-                                      color: AppColors.primary,
-                                      size: 28,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                ),
-                                child: Divider(
-                                  color: Colors.white24,
-                                  height: 1,
-                                  thickness: 0.6,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }, childCount: histories.length),
-                    ),
-                  ],
+                            return _HistoryItem(
+                              chapter: chapter,
+                              progress: progress,
+                              resumeSeconds: history.lastPosition,
+                            );
+                          }, childCount: histories.length),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             ),
           ),
 
-          // ===== SCROLL TO TOP =====
           if (_showScrollToTop)
             Positioned(
               bottom: 24,
               right: 16,
               child: FloatingActionButton(
                 backgroundColor: AppColors.primary.withOpacity(0.7),
-                foregroundColor: Colors.white,
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
                 onPressed: _scrollToTop,
                 child: const Icon(Icons.arrow_upward_rounded),
               ),
@@ -243,8 +138,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
     );
   }
-
-  // ================= UI PARTS =================
 
   SliverAppBar _buildAppBar() {
     return SliverAppBar(
@@ -281,16 +174,121 @@ class _HistoryScreenState extends State<HistoryScreen> {
           'Chưa có lịch sử nghe',
           style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Các chương bạn đã nghe sẽ xuất hiện ở đây',
-          style: TextStyle(
-            color: AppColors.textSecondary.withOpacity(0.7),
-            fontSize: 13,
-          ),
-          textAlign: TextAlign.center,
-        ),
       ],
+    );
+  }
+}
+
+class _HistoryItem extends StatelessWidget {
+  final dynamic chapter;
+  final double progress;
+  final int resumeSeconds;
+
+  const _HistoryItem({
+    required this.chapter,
+    required this.progress,
+    required this.resumeSeconds,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AudioStore>(
+      builder: (_, audioStore, _) => InkWell(
+        onTap: () async {
+          final audio = audioStore;
+
+          final isSameChapter = audio.currentChapter?.id == chapter.id;
+
+          if (isSameChapter) {
+            if (audio.isPlaying) {
+              audio.pause();
+            } else {
+              audio.resume();
+            }
+            return;
+          }
+
+          await audio.playChapter(
+            story: chapter.story,
+            chapter: chapter,
+            resumePositionSeconds: resumeSeconds,
+          );
+        },
+
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: chapter.story.coverUrl?.isNotEmpty == true
+                        ? Image.network(
+                            chapter.story.coverUrl!,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            width: 56,
+                            height: 56,
+                            color: AppColors.primary.withOpacity(0.2),
+                            child: Icon(
+                              Icons.menu_book,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          chapter.story.title,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          chapter.title,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  audioStore.isPlaying &&
+                          audioStore.currentChapter?.id == chapter.id
+                      ? Icon(
+                          Icons.pause_circle_filled,
+                          color: AppColors.primary,
+                          size: 28,
+                        )
+                      : Icon(
+                          Icons.play_circle_fill,
+                          color: AppColors.primary,
+                          size: 28,
+                        ),
+                ],
+              ),
+            ),
+            // const Divider(thickness: 0.3),
+          ],
+        ),
+      ),
     );
   }
 }
