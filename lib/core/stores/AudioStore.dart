@@ -17,7 +17,6 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
   DateTime? _currentDay;
   Duration _lastPosition = Duration.zero;
 
-  // ===== CURRENT PLAYING =====
   Book? currentStory;
   Chapter? currentChapter;
 
@@ -29,7 +28,6 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
 
   bool isMiniVisible = false;
 
-  // ===== DOWNLOAD =====
   bool isDownloading = false;
   double downloadProgress = 0.0;
 
@@ -42,7 +40,6 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
   bool get isPlaying => _player.playing;
   AudioPlayer get player => _player;
 
-  // ===== HISTORY =====
   HistoryStore? _historyStore;
   Timer? _historyTimer;
   Duration _lastSavedPosition = Duration.zero;
@@ -53,8 +50,6 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _init();
   }
-
-  // ================= INIT =================
 
   void _init() {
     if (_initialized) return;
@@ -312,7 +307,6 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     });
   }
 
-  /// Fake dữ liệu tuần này cho test chart
   void fakeWeeklyData() {
     final now = DateTime.now();
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1)); // Thứ 2
@@ -323,7 +317,6 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
         startOfWeek.month,
         startOfWeek.day + i,
       );
-      // Tạo số giờ nghe giả, ví dụ 0.5 -> 2.0 giờ mỗi ngày
       _listenedHours[day] = 2 + i * 0.2;
     }
 
@@ -339,10 +332,12 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     super.dispose();
   }
 
-  // Map<String, String> get downloadedChapters =>
-  //     _downloadedChapters.toList().asMap().map(
-  //       (_, id) => MapEntry(id, id), // Hoặc bạn có thể trả về path nếu cần
-  //     );
+  void reset() {
+    player.stop();
+    currentChapter = null;
+    currentStory = null;
+    notifyListeners();
+  }
 
   List<Chapter> getDownloadedChapters() {
     final downloaded = <Chapter>[];
@@ -355,7 +350,6 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
 
   Set<String> get downloadedChapterIds => _downloadedChapters;
 
-  // Getter để lấy danh sách Chapter đã tải
   List<Chapter> get downloadedChapter {
     return _chapters
         .where((chapter) => _downloadedChapters.contains(chapter.id))

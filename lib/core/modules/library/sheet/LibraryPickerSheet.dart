@@ -13,12 +13,10 @@ class LibraryPickerSheet extends StatefulWidget {
 }
 
 class _LibraryPickerSheetState extends State<LibraryPickerSheet> {
-  // Biến để theo dõi xem dialog đang mở hay không
   bool _isDialogOpen = false;
 
   @override
   void dispose() {
-    // Đảm bảo đóng dialog khi widget bị dispose
     if (_isDialogOpen && context.mounted) {
       Navigator.of(context, rootNavigator: true).pop();
     }
@@ -55,7 +53,6 @@ class _LibraryPickerSheetState extends State<LibraryPickerSheet> {
               ),
               const SizedBox(height: 16),
 
-              /// ====== LIST LIBRARIES ======
               ...lib.libraries.map(
                 (library) => ListTile(
                   title: Text(
@@ -67,7 +64,6 @@ class _LibraryPickerSheetState extends State<LibraryPickerSheet> {
               ),
               const Divider(color: Colors.white24),
 
-              /// ====== CREATE NEW LIBRARY ======
               ListTile(
                 leading: const Icon(Icons.add, color: Colors.orangeAccent),
                 title: const Text(
@@ -75,11 +71,9 @@ class _LibraryPickerSheetState extends State<LibraryPickerSheet> {
                   style: TextStyle(color: Colors.orangeAccent),
                 ),
                 onTap: () {
-                  // Đóng bottom sheet trước
                   if (mounted) {
                     Navigator.of(context).pop();
                   }
-                  // Mở dialog tạo thư viện
                   _showCreateLibraryDialog();
                 },
               ),
@@ -127,55 +121,130 @@ class _LibraryPickerSheetState extends State<LibraryPickerSheet> {
       builder: (_) {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
+            bool isCreating = false;
+
+            Future<void> _createLibrary() async {
+              final name = controller.text.trim();
+              if (name.isEmpty) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  const SnackBar(
+                    content: Text('Vui lòng nhập tên thư viện'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              if (name == 'Yêu thích' || name == 'Favorites') {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  const SnackBar(
+                    content: Text('Không thể tạo thư viện với tên này'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              setDialogState(() {
+                isCreating = true;
+              });
+
+              try {
+                await libraryStore.createLibrary(name);
+
+                _isDialogOpen = false;
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(
+                      content: Text('Tạo thư viện thành công'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(
+                      content: Text('Lỗi: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } finally {
+                if (dialogContext.mounted) {
+                  setDialogState(() {
+                    isCreating = false;
+                  });
+                }
+              }
+            }
+
             return AlertDialog(
-              title: const Text('Tạo thư viện'),
-              content: TextField(
-                controller: controller,
-                decoration: const InputDecoration(
-                  hintText: 'Tên thư viện',
-                  border: OutlineInputBorder(),
+              backgroundColor: AppColors.background,
+              title: Text(
+                'Tạo thư viện',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
                 ),
-                autofocus: true,
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    maxLength: 50,
+                    decoration: InputDecoration(
+                      hintText: 'Nhập tên thư viện',
+                      hintStyle: TextStyle(color: AppColors.textSecondary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: AppColors.primary),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: AppColors.primary,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    style: TextStyle(color: AppColors.textPrimary),
+                    onSubmitted: (_) {
+                      if (!isCreating) {
+                        _createLibrary();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  if (isCreating)
+                    const Center(child: CircularProgressIndicator()),
+                ],
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    _isDialogOpen = false;
-                    Navigator.of(dialogContext).pop();
-                  },
-                  child: const Text('Huỷ'),
+                  onPressed: isCreating
+                      ? null
+                      : () {
+                          _isDialogOpen = false;
+                          Navigator.of(dialogContext).pop();
+                        },
+                  child: Text(
+                    'Huỷ',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
-                  onPressed: () async {
-                    final name = controller.text.trim();
-                    if (name.isEmpty) {
-                      ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        const SnackBar(
-                          content: Text('Vui lòng nhập tên thư viện'),
-                        ),
-                      );
-                      return;
-                    }
-
-                    try {
-                      await libraryStore.createLibrary(name);
-
-                      _isDialogOpen = false;
-                      if (dialogContext.mounted) {
-                        Navigator.of(dialogContext).pop();
-                      }
-                    } catch (e) {
-                      if (dialogContext.mounted) {
-                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                          SnackBar(
-                            content: Text('Lỗi: ${e.toString()}'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  child: const Text('Tạo'),
+                  onPressed: isCreating ? null : _createLibrary,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                  child: const Text(
+                    'Tạo',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );
