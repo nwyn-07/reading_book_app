@@ -7,10 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:reading_book_app/core/models/Book.dart';
 import 'package:reading_book_app/core/models/Chapter.dart';
 import 'package:reading_book_app/core/stores/AudioStore.dart';
-import 'package:reading_book_app/core/models/Chapter.dart';
-import 'package:reading_book_app/core/stores/AudioStore.dart';
-import 'package:reading_book_app/core/stores/LibraryStore.dart';
-import 'package:reading_book_app/core/stores/DownloadStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
 import 'package:path/path.dart' as p;
 
@@ -26,9 +22,9 @@ class _DownloadScreenState extends State<DownloadScreen> {
   bool _showScrollToTop = false;
   bool _isRefreshing = false;
   List<Map<String, dynamic>>? _cachedStories;
-  Set<String> _expandedStoryIds = {};
-  Map<String, List<Map<String, dynamic>>> _storyChapters = {};
-  Map<String, int> _chapterFileSizes = {}; // Cache kích thước file
+  final Set<String> _expandedStoryIds = {};
+  final Map<String, List<Map<String, dynamic>>> _storyChapters = {};
+  final Map<String, int> _chapterFileSizes = {}; // Cache kích thước file
 
   @override
   void initState() {
@@ -551,6 +547,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
                           pinned: true,
                           backgroundColor: AppColors.background,
                           elevation: 0,
+                          leading: IconButton(
+                            icon: Icon(Icons.arrow_back, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
                           title: Text(
                             'Tải xuống',
                             style: TextStyle(

@@ -13,7 +13,7 @@ import 'package:reading_book_app/core/stores/HistoryStore.dart';
 class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
   final AudioPlayer _player = AudioPlayer();
   final Dio _dio = Dio();
-  Map<DateTime, double> _listenedHours = {};
+  final Map<DateTime, double> _listenedHours = {};
   DateTime? _currentDay;
   Duration _lastPosition = Duration.zero;
 

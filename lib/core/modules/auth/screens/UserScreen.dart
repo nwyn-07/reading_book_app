@@ -224,17 +224,18 @@ class _UserScreenState extends State<UserScreen> {
     final userName = _getUserName(auth, userStore);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/background.png'),
-                  fit: BoxFit.cover,
-                ),
-              ),
+              // decoration: const BoxDecoration(
+              //   image: DecorationImage(
+              //     image: AssetImage('assets/images/background.png'),
+              //     fit: BoxFit.cover,
+              //   ),
+              // ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
