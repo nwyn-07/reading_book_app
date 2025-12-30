@@ -77,9 +77,19 @@ class FetchApi {
   /// ======================
   /// DELETE
   /// ======================
-  Future<dynamic> delete(String url) async {
-    final res = await http.delete(Uri.parse(url), headers: await _headers());
-    return _handleResponse(res);
+  Future<dynamic> delete(String url, {Map<String, dynamic>? body}) async {
+    final request = http.Request('DELETE', Uri.parse(url));
+
+    request.headers.addAll(await _headers());
+
+    if (body != null) {
+      request.body = jsonEncode(body);
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    return _handleResponse(response);
   }
 
   /// ======================

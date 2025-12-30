@@ -185,7 +185,7 @@ class CoreServices {
     required String libraryId,
     required String storyId,
   }) async {
-    await _api.post(
+    await _api.delete(
       Endpoint.libraryStoryRemove,
       body: {'libraryId': libraryId, 'storyId': storyId},
     );

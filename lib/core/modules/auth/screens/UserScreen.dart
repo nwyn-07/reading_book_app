@@ -45,6 +45,7 @@ class _UserScreenState extends State<UserScreen> {
   ];
 
   final ImagePicker _picker = ImagePicker();
+  final TextEditingController _nameController = TextEditingController();
 
   /// =========================
   /// VIEW AVATAR (FULLSCREEN)
@@ -54,7 +55,7 @@ class _UserScreenState extends State<UserScreen> {
 
     showDialog(
       context: context,
-      barrierDismissible: true, // 👈 cho phép tap ngoài
+      barrierDismissible: true,
       barrierColor: Colors.black.withOpacity(0.9),
       builder: (_) {
         return Stack(
@@ -68,7 +69,7 @@ class _UserScreenState extends State<UserScreen> {
 
             Center(
               child: GestureDetector(
-                onTap: () {}, // chặn tap truyền ra ngoài
+                onTap: () {},
                 child: InteractiveViewer(
                   maxScale: 3,
                   child: CachedNetworkImage(
@@ -105,6 +106,20 @@ class _UserScreenState extends State<UserScreen> {
                 icon: Icons.camera_alt,
                 label: 'Chụp ảnh',
                 source: ImageSource.camera,
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      'Hủy',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -146,14 +161,10 @@ class _UserScreenState extends State<UserScreen> {
     if (!mounted) return;
 
     if (success) {
-      // Cập nhật AuthStore với avatar mới
       final authStore = context.read<AuthStore>();
       await authStore.updateUserAvatar(userStore.currentUser?.avatarUrl ?? '');
 
-      // Clear cache để load lại hình mới
       await _clearImageCache();
-
-      // Force rebuild widget
       setState(() {});
     }
 
@@ -169,14 +180,10 @@ class _UserScreenState extends State<UserScreen> {
 
   Future<void> _clearImageCache() async {
     try {
-      // Clear flutter image cache
-      PaintingBinding.instance.imageCache.clear();
-      PaintingBinding.instance.imageCache.clearLiveImages();
+      PaintingBinding.instance.imageCache?.clear();
+      PaintingBinding.instance.imageCache?.clearLiveImages();
 
-      // Clear cache manager
       await DefaultCacheManager().emptyCache();
-
-      // Nếu có custom cache manager cho avatar
       await BookImageCacheManager().emptyCache();
     } catch (e) {
       debugPrint('Error clearing cache: $e');
@@ -187,6 +194,7 @@ class _UserScreenState extends State<UserScreen> {
     await _clearImageCache();
 
     context.read<StoryStore>().clear();
+    context.read<AudioStore>().reset();
     await context.read<AuthStore>().logout();
   }
 
@@ -206,6 +214,165 @@ class _UserScreenState extends State<UserScreen> {
     }
 
     return auth.user?['fullName'] ?? 'Người dùng';
+  }
+
+  /// =========================
+  /// EDIT NAME FUNCTIONS
+  /// =========================
+  Future<void> _showEditNameDialog(String currentName) async {
+    _nameController.text = currentName;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            bool isUpdating = false;
+
+            Future<void> _saveName() async {
+              final newName = _nameController.text.trim();
+              if (newName.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Tên không được để trống'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              setState(() {
+                isUpdating = true;
+              });
+
+              try {
+                final userStore = context.read<UserStore>();
+                final success = await userStore.updateProfile(
+                  fullName: newName,
+                );
+
+                if (success) {
+                  final authStore = context.read<AuthStore>();
+                  await authStore.updateUserName(newName);
+
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Cập nhật tên thành công'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Cập nhật tên thất bại'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Lỗi: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } finally {
+                if (mounted) {
+                  setState(() {
+                    isUpdating = false;
+                  });
+                }
+              }
+            }
+
+            return AlertDialog(
+              backgroundColor: AppColors.background,
+              title: Text(
+                'Chỉnh sửa tên',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _nameController,
+                    autofocus: true,
+                    maxLength: 50,
+                    decoration: InputDecoration(
+                      hintText: 'Nhập tên của bạn',
+                      hintStyle: TextStyle(color: AppColors.textSecondary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: AppColors.primary),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: AppColors.primary,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    style: TextStyle(color: AppColors.textPrimary),
+                    onSubmitted: (_) {
+                      if (!isUpdating) {
+                        _saveName();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  if (isUpdating)
+                    const Center(child: CircularProgressIndicator()),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isUpdating
+                      ? null
+                      : () {
+                          _nameController.clear();
+                          Navigator.pop(context);
+                        },
+                  child: Text(
+                    'Hủy',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: isUpdating ? null : _saveName,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                  child: const Text(
+                    'Lưu',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    ).then((_) {
+      _nameController.clear();
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 
   @override
@@ -294,12 +461,26 @@ class _UserScreenState extends State<UserScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            Text(
-                              userName,
-                              style: AppTextStyles.body.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w300,
+                            const SizedBox(height: 4),
+                            GestureDetector(
+                              onLongPress: () {
+                                _showEditNameDialog(userName);
+                              },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    userName,
+                                    style: AppTextStyles.body.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w300,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
                               ),
                             ),
                           ],
@@ -319,7 +500,6 @@ class _UserScreenState extends State<UserScreen> {
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-
                       children: [
                         Row(
                           children: [
@@ -355,7 +535,6 @@ class _UserScreenState extends State<UserScreen> {
                         Expanded(
                           child: Consumer<AudioStore>(
                             builder: (_, audio, __) {
-                              // Tạo dữ liệu giả sau khi widget được build xong
                               WidgetsBinding.instance.addPostFrameCallback((_) {
                                 if (audio.getWeeklyHours().every(
                                   (e) => e == 0.0,
@@ -478,83 +657,6 @@ class _UserScreenState extends State<UserScreen> {
               ),
             ),
           ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-          // ===== Menu items =====
-          SliverToBoxAdapter(
-            child: Container(
-              height: 170,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: ListView.separated(
-                padding: EdgeInsets.zero,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: menuItems.length,
-                separatorBuilder: (_, __) =>
-                    Divider(height: 1, color: Colors.white.withOpacity(0.1)),
-                itemBuilder: (context, index) {
-                  final item = menuItems[index];
-                  return SizedBox(
-                    height: 56,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () {
-                        if (item['type'] == 'library') {
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            '/home',
-                            (route) => false,
-                            arguments: {'tab': 2},
-                          );
-                        } else if (item['route'] != null) {
-                          Navigator.pushNamed(context, item['route']);
-                        }
-                      },
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 16),
-                          SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: SvgPicture.asset(
-                              item['icon'] as String,
-                              colorFilter: ColorFilter.mode(
-                                AppColors.iconActive,
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Text(
-                              item['label'] as String,
-                              style: AppTextStyles.body.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.only(right: 16),
-                            child: Icon(
-                              Icons.chevron_right,
-                              color: Colors.white38,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
     );
@@ -569,8 +671,6 @@ class _UserScreenState extends State<UserScreen> {
         colorFilter: ColorFilter.mode(AppColors.iconInactive, BlendMode.srcIn),
       );
     }
-
-    // Thêm timestamp để tránh cache
 
     return CachedNetworkImage(
       imageUrl: avatarUrl,

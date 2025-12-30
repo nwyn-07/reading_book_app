@@ -39,6 +39,13 @@ class AuthStore extends ChangeNotifier {
     }
   }
 
+  Future<void> updateUserName(String fullName) async {
+    if (_user != null) {
+      _user!['fullName'] = fullName;
+      notifyListeners();
+    }
+  }
+
   Future<void> login(String email, String password) async {
     _setLoading(true);
 
