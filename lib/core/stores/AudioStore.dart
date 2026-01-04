@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:reading_book_app/core/models/Book.dart';
 import 'package:reading_book_app/core/models/Chapter.dart';
 import 'package:reading_book_app/core/stores/HistoryStore.dart';
+import 'package:reading_book_app/core/stores/ReadingStore.dart';
 
 class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
   final AudioPlayer _player = AudioPlayer();
@@ -44,6 +45,8 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
   Timer? _historyTimer;
   Duration _lastSavedPosition = Duration.zero;
 
+  ReadingStore? _readingStore;
+
   bool _initialized = false;
 
   AudioStore() {
@@ -62,7 +65,6 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
         const Duration(seconds: 10),
         (_) => _saveHistory(),
       );
-
       notifyListeners();
     });
 
@@ -76,10 +78,16 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     _player.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
         _saveHistory(force: true);
+        _readingStore?.finishReading();
         playNext();
       }
     });
+
     initTracking();
+  }
+
+  void attachReadingStore(ReadingStore readingStore) {
+    _readingStore = readingStore;
   }
 
   void attachHistoryStore(HistoryStore historyStore) {
@@ -119,8 +127,11 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     required Book story,
     required Chapter chapter,
     int? resumePositionSeconds,
+    int? resumeTotalSeconds,
   }) async {
+    // 1️⃣ Lưu & đóng session cũ
     await _saveHistory(force: true);
+    await _readingStore?.finishReading();
 
     currentStory = story;
     currentChapter = chapter;
@@ -135,6 +146,22 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     try {
       await _player.stop();
 
+      // 2️⃣ START hoặc RESUME reading (🔥 BẮT BUỘC)
+      if (resumePositionSeconds != null && resumePositionSeconds > 0) {
+        await _readingStore?.resumeReading(
+          chapterId: chapter.id,
+          storyId: story.id,
+          progress: resumePositionSeconds,
+          totalSeconds: resumeTotalSeconds ?? 0,
+        );
+      } else {
+        await _readingStore?.startReading(
+          chapterId: chapter.id,
+          storyId: story.id,
+        );
+      }
+
+      // 3️⃣ Load audio
       if (await file.exists()) {
         _downloadedChapters.add(chapter.id);
         _downloadedStories.add(story.id);
@@ -143,6 +170,7 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
         await _player.setUrl(chapter.audioUrl);
       }
 
+      // 4️⃣ Seek nếu resume
       if (resumePositionSeconds != null && resumePositionSeconds > 5) {
         await _player.seek(Duration(seconds: resumePositionSeconds));
       }
@@ -230,11 +258,22 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
   void pause() {
     _player.pause();
     _saveHistory(force: true);
+    _readingStore?.pause();
     notifyListeners();
   }
 
   void resume() {
     _player.play();
+
+    if (currentChapter != null && currentStory != null) {
+      _readingStore?.resumeReading(
+        chapterId: currentChapter!.id,
+        storyId: currentStory!.id,
+        progress: position.inSeconds,
+        totalSeconds: position.inSeconds, // hoặc lấy từ history
+      );
+    }
+
     notifyListeners();
   }
 
@@ -248,6 +287,7 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
   void stop() {
     _saveHistory(force: true);
     _player.stop();
+    _readingStore?.finishReading();
     position = Duration.zero;
     duration = Duration.zero;
     notifyListeners();
@@ -270,6 +310,7 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       _saveHistory(force: true);
+      _readingStore?.pause();
     }
   }
 
@@ -295,7 +336,7 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
 
   List<double> getWeeklyHours() {
     final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1)); // Thứ 2
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
 
     return List.generate(7, (i) {
       final day = DateTime(

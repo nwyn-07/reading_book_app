@@ -5,7 +5,6 @@ import 'package:reading_book_app/core/models/Book.dart';
 import 'package:reading_book_app/core/stores/AudioStore.dart';
 import 'package:reading_book_app/core/stores/ChapterStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
-import 'package:reading_book_app/core/theme/AppTextStyles.dart';
 
 class ChapterScreen extends StatefulWidget {
   final Book story;

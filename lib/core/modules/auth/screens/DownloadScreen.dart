@@ -7,10 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:reading_book_app/core/models/Book.dart';
 import 'package:reading_book_app/core/models/Chapter.dart';
 import 'package:reading_book_app/core/stores/AudioStore.dart';
-import 'package:reading_book_app/core/models/Chapter.dart';
-import 'package:reading_book_app/core/stores/AudioStore.dart';
-import 'package:reading_book_app/core/stores/LibraryStore.dart';
-import 'package:reading_book_app/core/stores/DownloadStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
 import 'package:path/path.dart' as p;
 
