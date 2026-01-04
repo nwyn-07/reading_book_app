@@ -6,16 +6,20 @@ class ReadingStore extends ChangeNotifier {
   final CoreServices _core = CoreServices.instance;
 
   String? _chapterId;
+  String? _storyId;
+
   int _progress = 0;
   int _totalSeconds = 0;
 
   bool _isReading = false;
   bool _isLoading = false;
 
-  Timer? _timer;
+  Timer? _timer; // đếm thời gian đọc
+  Timer? _updateTimer; // debounce updateReading
 
   // ================= GETTERS =================
   String? get chapterId => _chapterId;
+  String? get storyId => _storyId;
   int get progress => _progress;
   int get totalSeconds => _totalSeconds;
   bool get isReading => _isReading;
@@ -23,8 +27,11 @@ class ReadingStore extends ChangeNotifier {
 
   // ================= ACTIONS =================
 
-  /// 🚀 Bắt đầu đọc
-  Future<void> startReading(String chapterId) async {
+  /// 🟢 Start reading (chapter mới)
+  Future<void> startReading({
+    required String chapterId,
+    required String storyId,
+  }) async {
     if (_isReading && _chapterId == chapterId) return;
 
     _isLoading = true;
@@ -34,87 +41,144 @@ class ReadingStore extends ChangeNotifier {
       await _core.startReading(chapterId);
 
       _chapterId = chapterId;
+      _storyId = storyId;
       _progress = 0;
       _totalSeconds = 0;
       _isReading = true;
 
       _startTimer();
+      _startUpdateTimer();
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  /// 🔄 Update progress (scroll / page)
-  Future<void> updateReading(int progress) async {
+  /// 🔄 Update progress (audio / scroll)
+  void updateProgress(int progress) {
     if (!_isReading || _chapterId == null) return;
 
     _progress = progress;
     notifyListeners();
-
-    await _core.updateReading(_chapterId!, progress);
   }
 
-  /// ⏱ Tick mỗi giây để tính thời gian đọc
-  void _startTimer() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _totalSeconds++;
-    });
+  /// ▶ Resume reading (từ history / resume audio)
+  Future<void> resumeReading({
+    required String chapterId,
+    required String storyId,
+    required int progress,
+    required int totalSeconds,
+  }) async {
+    if (_isReading && _chapterId == chapterId) return;
+
+    _chapterId = chapterId;
+    _storyId = storyId;
+    _progress = progress;
+    _totalSeconds = totalSeconds;
+    _isReading = true;
+
+    _startTimer();
+    _startUpdateTimer();
+    notifyListeners();
   }
 
-  /// ⏸ Pause (app background)
+  /// ⏸ Pause (app background / audio pause)
   Future<void> pause() async {
     if (!_isReading || _chapterId == null) return;
 
+    _isReading = false;
     _timer?.cancel();
+    _updateTimer?.cancel();
+
+    // 🔴 UPDATE READING (ĐÚNG DTO)
+    await _core.updateReading(
+      chapterId: _chapterId!,
+      lastPosition: _progress,
+      totalTimeSeconds: _totalSeconds,
+    );
 
     await _core.updateHistory(
       chapterId: _chapterId!,
       lastPosition: _progress,
       totalTimeSeconds: _totalSeconds,
     );
+
+    notifyListeners();
   }
 
-  /// ✅ Kết thúc đọc
+  /// ⛔ Finish reading (thoát chapter / hết audio)
   Future<void> finishReading() async {
-    if (!_isReading || _chapterId == null) return;
+    if (_chapterId == null || _storyId == null) return;
 
     _isLoading = true;
     notifyListeners();
 
     try {
       _timer?.cancel();
+      _updateTimer?.cancel();
 
-      await _core.finishReading(_chapterId!);
+      // 🔴 FINISH READING (ĐÚNG DTO)
+      await _core.finishReading(
+        storyId: _storyId!,
+        durationSeconds: _totalSeconds,
+      );
 
-      // lưu history lần cuối
       await _core.updateHistory(
         chapterId: _chapterId!,
         lastPosition: _progress,
         totalTimeSeconds: _totalSeconds,
       );
+
+      debugPrint('Finish reading: story=$_storyId, duration=$_totalSeconds');
     } finally {
       _reset();
       notifyListeners();
     }
   }
 
-  // ================= HELPERS =================
+  // ================= INTERNAL =================
+
+  /// ⏱ Đếm thời gian đọc
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_isReading) {
+        _totalSeconds++;
+      }
+    });
+  }
+
+  /// 🌐 Update reading mỗi 10s (debounce)
+  void _startUpdateTimer() {
+    _updateTimer?.cancel();
+    _updateTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (_isReading && _chapterId != null) {
+        _core.updateReading(
+          chapterId: _chapterId!,
+          lastPosition: _progress,
+          totalTimeSeconds: _totalSeconds,
+        );
+      }
+    });
+  }
 
   void _reset() {
     _chapterId = null;
+    _storyId = null;
     _progress = 0;
     _totalSeconds = 0;
     _isReading = false;
     _isLoading = false;
     _timer?.cancel();
+    _updateTimer?.cancel();
     _timer = null;
+    _updateTimer = null;
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _updateTimer?.cancel();
     super.dispose();
   }
 }
