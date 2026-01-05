@@ -13,6 +13,7 @@ import 'package:reading_book_app/core/modules/cache/BookCacheImageManager.dart';
 import 'package:reading_book_app/core/modules/chapter/WeeklyChart.dart';
 import 'package:reading_book_app/core/stores/AudioStore.dart';
 import 'package:reading_book_app/core/stores/AuthStore.dart';
+import 'package:reading_book_app/core/stores/StatsStore.dart';
 import 'package:reading_book_app/core/stores/StoryStore.dart';
 import 'package:reading_book_app/core/stores/UserStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
@@ -46,6 +47,15 @@ class _UserScreenState extends State<UserScreen> {
 
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _nameController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StatsStore>().fetchDayStats();
+    });
+  }
 
   /// =========================
   /// VIEW AVATAR (FULLSCREEN)
@@ -533,18 +543,27 @@ class _UserScreenState extends State<UserScreen> {
                         ),
                         const SizedBox(height: 12),
                         Expanded(
-                          child: Consumer<AudioStore>(
-                            builder: (_, audio, __) {
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (audio.getWeeklyHours().every(
-                                  (e) => e == 0.0,
-                                )) {
-                                  audio.fakeWeeklyData();
-                                }
-                              });
+                          child: Consumer<StatsStore>(
+                            builder: (_, stats, __) {
+                              if (stats.loading) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
 
-                              final weeklyData = audio.getWeeklyHours();
-                              return WeeklyHourChart(data: weeklyData);
+                              if (stats.dayStats == null ||
+                                  stats.dayStats!.isEmpty) {
+                                return const Center(
+                                  child: Text(
+                                    'Chưa có dữ liệu tuần này',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                );
+                              }
+
+                              return WeeklyHourChart(
+                                items: stats.dayStats!, // ✅ DATA THẬT
+                              );
                             },
                           ),
                         ),

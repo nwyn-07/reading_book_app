@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:reading_book_app/core/models/Library.dart';
 import 'package:reading_book_app/core/models/LibraryStory.dart';
+import 'package:reading_book_app/core/models/ReadingStatsItem.dart';
 import 'package:reading_book_app/core/services/api/Endpoint.dart';
 import 'package:reading_book_app/core/services/api/FetchApi.dart';
 
@@ -65,7 +66,6 @@ class CoreServices {
       );
     }
 
-    // 🚀 GỬI QUA FETCH API (FetchApi sẽ lo auth + response)
     final res = await _api.put(Endpoint.updateProfile, body: request);
 
     return res as Map<String, dynamic>;
@@ -239,36 +239,65 @@ class CoreServices {
  * READING
  * ========================= */
   Future<void> startReading(String chapterId) async {
-    await _api.post(Endpoint.startReading, body: {"chapterId": chapterId});
-  }
-
-  Future<void> updateReading(String chapterId, int progress) async {
     await _api.post(
-      Endpoint.updateReading,
-      body: {"chapterId": chapterId, "progress": progress},
+      Endpoint.startReading,
+      body: {"chapterId": chapterId, "startPosition": 0},
     );
   }
 
-  Future<void> finishReading(String chapterId) async {
-    await _api.post(Endpoint.finishReading, body: {"chapterId": chapterId});
+  Future<void> updateReading({
+    required String chapterId,
+    required int lastPosition,
+    required int totalTimeSeconds,
+  }) async {
+    await _api.post(
+      Endpoint.updateReading,
+      body: {
+        "chapterId": chapterId,
+        "lastPosition": lastPosition,
+        "totalTimeSeconds": totalTimeSeconds,
+      },
+    );
+  }
+
+  Future<void> finishReading({
+    required String storyId,
+    required int durationSeconds,
+  }) async {
+    await _api.post(
+      Endpoint.finishReading,
+      body: {"storyId": storyId, "durationSeconds": durationSeconds},
+    );
   }
 
   /* =========================
  * STATS
  * ========================= */
-  Future<Map<String, dynamic>> statsDay() async {
-    final res = await _api.get(Endpoint.readingStatsByDay);
-    return res as Map<String, dynamic>;
+  Future<List<ReadingStatsItem>> statsDay(int count) async {
+    final res = await _api.get(
+      Endpoint.readingStatsByDay,
+      body: {"count": count},
+    );
+
+    return (res as List).map((e) => ReadingStatsItem.fromJson(e)).toList();
   }
 
-  Future<Map<String, dynamic>> statsMonth() async {
-    final res = await _api.get(Endpoint.readingStatsByMonth);
-    return res as Map<String, dynamic>;
+  Future<List<ReadingStatsItem>> statsMonth(int count) async {
+    final res = await _api.get(
+      Endpoint.readingStatsByMonth,
+      body: {"count": count},
+    );
+
+    return (res as List).map((e) => ReadingStatsItem.fromJson(e)).toList();
   }
 
-  Future<Map<String, dynamic>> statsYear() async {
-    final res = await _api.get(Endpoint.readingStatsByYear);
-    return res as Map<String, dynamic>;
+  Future<List<ReadingStatsItem>> statsYear(int count) async {
+    final res = await _api.get(
+      Endpoint.readingStatsByYear,
+      body: {"count": count},
+    );
+
+    return (res as List).map((e) => ReadingStatsItem.fromJson(e)).toList();
   }
 
   /* =========================

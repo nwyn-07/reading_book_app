@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:reading_book_app/core/models/ReadingStatsItem.dart';
 import 'package:reading_book_app/core/services/api/CoreService.dart';
 
 class StatsStore extends ChangeNotifier {
@@ -7,9 +8,9 @@ class StatsStore extends ChangeNotifier {
   bool _loading = false;
   String? _error;
 
-  Map<String, dynamic>? _dayStats;
-  Map<String, dynamic>? _monthStats;
-  Map<String, dynamic>? _yearStats;
+  List<ReadingStatsItem>? _dayStats;
+  List<ReadingStatsItem>? _monthStats;
+  List<ReadingStatsItem>? _yearStats;
 
   /// ======================
   /// GETTERS
@@ -17,9 +18,9 @@ class StatsStore extends ChangeNotifier {
   bool get loading => _loading;
   String? get error => _error;
 
-  Map<String, dynamic>? get dayStats => _dayStats;
-  Map<String, dynamic>? get monthStats => _monthStats;
-  Map<String, dynamic>? get yearStats => _yearStats;
+  List<ReadingStatsItem>? get dayStats => _dayStats;
+  List<ReadingStatsItem>? get monthStats => _monthStats;
+  List<ReadingStatsItem>? get yearStats => _yearStats;
 
   /// ======================
   /// INTERNAL
@@ -44,7 +45,7 @@ class StatsStore extends ChangeNotifier {
     _setError(null);
 
     try {
-      _dayStats = await _core.statsDay();
+      _dayStats = await _core.statsDay(7);
     } catch (e) {
       _setError(e.toString());
     } finally {
@@ -58,7 +59,7 @@ class StatsStore extends ChangeNotifier {
     _setError(null);
 
     try {
-      _monthStats = await _core.statsMonth();
+      _monthStats = await _core.statsMonth(7);
     } catch (e) {
       _setError(e.toString());
     } finally {
@@ -72,7 +73,7 @@ class StatsStore extends ChangeNotifier {
     _setError(null);
 
     try {
-      _yearStats = await _core.statsYear();
+      _yearStats = await _core.statsYear(7);
     } catch (e) {
       _setError(e.toString());
     } finally {
@@ -87,9 +88,9 @@ class StatsStore extends ChangeNotifier {
 
     try {
       final results = await Future.wait([
-        _core.statsDay(),
-        _core.statsMonth(),
-        _core.statsYear(),
+        _core.statsDay(7),
+        _core.statsMonth(7),
+        _core.statsYear(7),
       ]);
 
       _dayStats = results[0];

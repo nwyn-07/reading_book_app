@@ -1,23 +1,27 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
+import 'package:reading_book_app/core/models/ReadingStatsItem.dart';
 
 class WeeklyHourChart extends StatelessWidget {
-  final List<double> data;
+  final List<ReadingStatsItem> items;
 
-  const WeeklyHourChart({super.key, required this.data});
+  const WeeklyHourChart({super.key, required this.items});
 
   @override
   Widget build(BuildContext context) {
+    final data = _buildWeeklyHours(items);
+
     final bool isEmpty = data.every((e) => e == 0);
     if (isEmpty) {
       return _buildEmptyState();
     }
 
     final weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final todayIndex = DateTime.now().weekday - 1;
+
     final maxY = _getMaxY(data);
     final interval = _getHorizontalInterval(maxY);
-    final todayIndex = DateTime.now().weekday - 1; // Mon = 0
 
     return BarChart(
       BarChartData(
@@ -104,7 +108,7 @@ class WeeklyHourChart extends StatelessWidget {
         borderData: FlBorderData(show: false),
 
         // ================= BARS =================
-        barGroups: List.generate(data.length, (i) {
+        barGroups: List.generate(7, (i) {
           final isToday = i == todayIndex;
           final value = data[i];
 
@@ -115,10 +119,7 @@ class WeeklyHourChart extends StatelessWidget {
                 toY: value,
                 width: 16,
                 borderRadius: BorderRadius.circular(6),
-
-                // 🎯 MÀU ĐƠN, KHÔNG GRADIENT
                 color: isToday ? AppColors.accent : AppColors.playButtonIcon,
-
                 backDrawRodData: BackgroundBarChartRodData(
                   show: true,
                   toY: maxY,
@@ -129,19 +130,36 @@ class WeeklyHourChart extends StatelessWidget {
           );
         }),
       ),
-
-      // 🎬 ANIMATION
       swapAnimationDuration: const Duration(milliseconds: 900),
       swapAnimationCurve: Curves.easeOutCubic,
     );
   }
 
+  // ================= DATA MAPPING =================
+
+  /// Convert ReadingStatsItem → 7 ngày trong tuần (giờ)
+  List<double> _buildWeeklyHours(List<ReadingStatsItem> items) {
+    final now = DateTime.now();
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1)); // Monday
+
+    final Map<int, double> map = {};
+
+    for (final item in items) {
+      final index = item.date.difference(startOfWeek).inDays;
+      if (index >= 0 && index < 7) {
+        map[index] = item.totalDurationSeconds / 3600;
+      }
+    }
+
+    return List.generate(7, (i) => map[i] ?? 0.0);
+  }
+
   // ================= EMPTY STATE =================
   Widget _buildEmptyState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           Icon(Icons.bar_chart, size: 64, color: Colors.white24),
           SizedBox(height: 12),
           Text(

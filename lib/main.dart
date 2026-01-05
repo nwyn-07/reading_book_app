@@ -50,6 +50,14 @@ void main() {
             return audioStore;
           },
         ),
+        ChangeNotifierProvider(create: (_) => ReadingStore()),
+        ChangeNotifierProxyProvider<ReadingStore, AudioStore>(
+          create: (_) => AudioStore(),
+          update: (_, readingStore, audioStore) {
+            audioStore!.attachReadingStore(readingStore);
+            return audioStore;
+          },
+        ),
       ],
       child: const MyApp(),
     ),
