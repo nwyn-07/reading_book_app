@@ -29,7 +29,11 @@ class _StoryScreenState extends State<StoryScreen> {
   void initState() {
     super.initState();
 
-    storyCategories = List.from(StoryCategory.mockData);
+    storyCategories = StoryCategory.mockData
+        .map((c) => c.copyWith(isSelected: c.value == 'ALL'))
+        .toList();
+
+    selectedCategory = 'ALL';
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<StoryStore>().fetchStories(refresh: true);
