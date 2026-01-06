@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:reading_book_app/core/models/StoryCategory.dart';
 import 'package:reading_book_app/core/modules/home/components/MiniPlayer.dart';
 import 'package:reading_book_app/core/modules/sleep_story/components/StoryCategory.dart';
+import 'package:reading_book_app/core/modules/sleep_story/components/StorySearchBar.dart';
 import 'package:reading_book_app/core/stores/AudioStore.dart';
 import 'package:reading_book_app/core/stores/StoryStore.dart';
 import 'package:reading_book_app/core/models/Book.dart';
@@ -150,7 +151,7 @@ class _StoryScreenState extends State<StoryScreen> {
 
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -160,6 +161,10 @@ class _StoryScreenState extends State<StoryScreen> {
                               'Bây giờ, nhắm mắt lại và tận hưởng',
                               style: AppTextStyles.caption,
                             ),
+                            const SizedBox(height: 16),
+
+                            /// 🔍 SEARCH BAR
+                            const StorySearchBar(),
                           ],
                         ),
                       ),

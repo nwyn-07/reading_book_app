@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:reading_book_app/core/modules/library/sheet/LibraryPickerSheet.dart';
 
 import 'package:reading_book_app/core/stores/AudioStore.dart';
@@ -231,31 +230,17 @@ class _AudioScreenState extends State<AudioScreen> {
 
                       Consumer<AudioStore>(
                         builder: (_, audio, _) {
-                          String icon;
-                          Color color;
-
-                          switch (audio.loopMode) {
-                            case AudioLoopMode.one:
-                              icon =
-                                  'assets/icons/repeat-one-01-stroke-rounded.svg';
-                              color = AppColors.textPrimary;
-                              break;
-                            case AudioLoopMode.all:
-                              icon = 'assets/icons/repeat-stroke-rounded.svg';
-                              color = AppColors.textPrimary;
-                              break;
-                            default:
-                              icon = 'assets/icons/repeat-stroke-rounded.svg';
-                              color = AppColors.iconInactive;
-                          }
-
                           return GestureDetector(
-                            onTap: audio.toggleLoopMode,
+                            onTap: audio.toggleLoop,
                             child: SvgPicture.asset(
-                              icon,
+                              audio.isLooping
+                                  ? 'assets/icons/repeat-one-01-stroke-rounded.svg'
+                                  : 'assets/icons/repeat-stroke-rounded.svg',
                               width: 30,
                               colorFilter: ColorFilter.mode(
-                                color,
+                                audio.isLooping
+                                    ? AppColors.textPrimary
+                                    : AppColors.iconInactive,
                                 BlendMode.srcIn,
                               ),
                             ),

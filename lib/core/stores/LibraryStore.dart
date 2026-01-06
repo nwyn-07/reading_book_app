@@ -32,32 +32,24 @@ class LibraryStore extends ChangeNotifier {
   }
 
   Future<void> fetchLibraries() async {
-    debugPrint('[LibraryStore] fetchLibraries → START');
     _loading = true;
     notifyListeners();
 
     try {
       _libraries = await _api.library();
-      debugPrint('[LibraryStore] Loaded libraries: ${_libraries.length}');
 
-      // Load stories cho từng library
       for (final lib in _libraries) {
-        debugPrint('[LibraryStore] Fetch stories for lib=${lib.id}');
         final stories = await _api.libraryStories(lib.id);
-        debugPrint('[LibraryStore] lib=${lib.id} stories=${stories.length}');
 
         _libStories[lib.id] = stories;
         _libStoriesTimestamp[lib.id] = DateTime.now();
       }
 
-      // ================= FAVORITE =================
       Library? favorite;
 
       try {
         favorite = _libraries.firstWhere((e) => e.name == 'Yêu thích');
-        debugPrint('[LibraryStore] Favorite library FOUND');
       } catch (_) {
-        debugPrint('[LibraryStore] Favorite library NOT FOUND → creating');
         await _api.addLibrary('Yêu thích');
 
         _libraries = await _api.library();
@@ -65,7 +57,6 @@ class LibraryStore extends ChangeNotifier {
       }
 
       _favoriteLibraryId = favorite.id;
-      debugPrint('[LibraryStore] Favorite library id=$_favoriteLibraryId');
 
       await fetchFavoriteStories();
 
@@ -98,6 +89,8 @@ class LibraryStore extends ChangeNotifier {
     if (libraryId == _favoriteLibraryId) {
       _favoriteStoryIds.add(storyId);
     }
+
+    await fetchLibraries();
 
     notifyListeners();
   }

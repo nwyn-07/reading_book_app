@@ -25,9 +25,6 @@ class ReadingStore extends ChangeNotifier {
   bool get isReading => _isReading;
   bool get isLoading => _isLoading;
 
-  // ================= ACTIONS =================
-
-  /// 🟢 Start reading (chapter mới)
   Future<void> startReading({
     required String chapterId,
     required String storyId,
@@ -54,7 +51,6 @@ class ReadingStore extends ChangeNotifier {
     }
   }
 
-  /// 🔄 Update progress (audio / scroll)
   void updateProgress(int progress) {
     if (!_isReading || _chapterId == null) return;
 
@@ -62,7 +58,6 @@ class ReadingStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// ▶ Resume reading (từ history / resume audio)
   Future<void> resumeReading({
     required String chapterId,
     required String storyId,
@@ -82,7 +77,6 @@ class ReadingStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// ⏸ Pause (app background / audio pause)
   Future<void> pause() async {
     if (!_isReading || _chapterId == null) return;
 
@@ -90,7 +84,6 @@ class ReadingStore extends ChangeNotifier {
     _timer?.cancel();
     _updateTimer?.cancel();
 
-    // 🔴 UPDATE READING (ĐÚNG DTO)
     await _core.updateReading(
       chapterId: _chapterId!,
       lastPosition: _progress,
@@ -106,7 +99,6 @@ class ReadingStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// ⛔ Finish reading (thoát chapter / hết audio)
   Future<void> finishReading() async {
     if (_chapterId == null || _storyId == null) return;
 
@@ -117,7 +109,6 @@ class ReadingStore extends ChangeNotifier {
       _timer?.cancel();
       _updateTimer?.cancel();
 
-      // 🔴 FINISH READING (ĐÚNG DTO)
       await _core.finishReading(
         storyId: _storyId!,
         durationSeconds: _totalSeconds,
@@ -128,17 +119,12 @@ class ReadingStore extends ChangeNotifier {
         lastPosition: _progress,
         totalTimeSeconds: _totalSeconds,
       );
-
-      debugPrint('Finish reading: story=$_storyId, duration=$_totalSeconds');
     } finally {
       _reset();
       notifyListeners();
     }
   }
 
-  // ================= INTERNAL =================
-
-  /// ⏱ Đếm thời gian đọc
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -148,7 +134,6 @@ class ReadingStore extends ChangeNotifier {
     });
   }
 
-  /// 🌐 Update reading mỗi 10s (debounce)
   void _startUpdateTimer() {
     _updateTimer?.cancel();
     _updateTimer = Timer.periodic(const Duration(seconds: 10), (_) {

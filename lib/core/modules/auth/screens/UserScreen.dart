@@ -190,8 +190,8 @@ class _UserScreenState extends State<UserScreen> {
 
   Future<void> _clearImageCache() async {
     try {
-      PaintingBinding.instance.imageCache?.clear();
-      PaintingBinding.instance.imageCache?.clearLiveImages();
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
 
       await DefaultCacheManager().emptyCache();
       await BookImageCacheManager().emptyCache();
