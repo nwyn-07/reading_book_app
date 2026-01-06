@@ -149,10 +149,6 @@ class _LibraryscreenState extends State<LibraryScreen> {
                             final cachedStories = lib.libStories[library.id];
                             final storyCount = cachedStories?.length ?? 0;
 
-                            debugPrint(
-                              'Library ${library.name} (id: ${library.id}) has $storyCount stories',
-                            );
-
                             final isFavoriteLib = library.name == 'Yêu thích';
 
                             return Dismissible(

@@ -41,15 +41,29 @@ class StatsStore extends ChangeNotifier {
 
   /// 📊 Stats theo ngày
   Future<void> fetchDayStats() async {
+    debugPrint('[StatsStore] fetchDayStats → START');
+
     _setLoading(true);
     _setError(null);
 
     try {
-      _dayStats = await _core.statsDay(7);
-    } catch (e) {
+      debugPrint('[StatsStore] Calling API statsDay(count: 7)');
+
+      final result = await _core.statsDay(7);
+
+      debugPrint(
+        '[StatsStore] fetchDayStats → SUCCESS (${result.length} items)',
+      );
+
+      _dayStats = result;
+    } catch (e, stack) {
+      debugPrint('[StatsStore] fetchDayStats → ERROR: $e');
+      debugPrintStack(stackTrace: stack);
+
       _setError(e.toString());
     } finally {
       _setLoading(false);
+      debugPrint('[StatsStore] fetchDayStats → END');
     }
   }
 

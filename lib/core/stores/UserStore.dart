@@ -1,9 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:reading_book_app/core/models/User.dart';
 import 'package:reading_book_app/core/services/api/CoreService.dart';
-
-import '../models/User.dart';
 
 class UserStore extends ChangeNotifier {
   final CoreServices _api = CoreServices.instance;
@@ -15,6 +14,23 @@ class UserStore extends ChangeNotifier {
   User? get currentUser => _currentUser;
   bool get isUpdating => _isUpdating;
   String? get error => _error;
+
+  /// ✅ FLAG: Store này có fetch profile
+  bool get hasFetchProfile => true;
+
+  /// 🔄 FETCH PROFILE (Refresh)
+  Future<void> fetchProfile() async {
+    try {
+      final res = await _api.me();
+      _currentUser = User.fromJson(res);
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Fetch profile error: $e');
+      _error = 'Không thể tải thông tin người dùng';
+      notifyListeners();
+    }
+  }
 
   void setUser(User user) {
     _currentUser = user;
@@ -39,7 +55,6 @@ class UserStore extends ChangeNotifier {
       );
 
       _currentUser = User.fromJson(res);
-
       _isUpdating = false;
       notifyListeners();
       return true;

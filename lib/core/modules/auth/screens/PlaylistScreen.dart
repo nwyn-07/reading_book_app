@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reading_book_app/core/models/Library.dart';
@@ -199,48 +200,50 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
                                     child: story.coverUrl.isNotEmpty
-                                        ? Image.network(
-                                            story.coverUrl,
+                                        ? CachedNetworkImage(
+                                            imageUrl: story.coverUrl,
                                             width: 56,
                                             height: 56,
                                             fit: BoxFit.cover,
-                                            loadingBuilder: (context, child, loadingProgress) {
-                                              if (loadingProgress == null)
-                                                return child;
-                                              return Container(
-                                                width: 56,
-                                                height: 56,
-                                                color: AppColors.primary
-                                                    .withOpacity(0.1),
-                                                child: Center(
-                                                  child: CircularProgressIndicator(
-                                                    value:
-                                                        loadingProgress
-                                                                .expectedTotalBytes !=
-                                                            null
-                                                        ? loadingProgress
-                                                                  .cumulativeBytesLoaded /
-                                                              loadingProgress
-                                                                  .expectedTotalBytes!
-                                                        : null,
-                                                    color: AppColors.primary,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
+
+                                            progressIndicatorBuilder:
+                                                (context, url, progress) {
+                                                  final value =
+                                                      progress.totalSize != null
+                                                      ? progress.downloaded /
+                                                            progress.totalSize!
+                                                      : null;
+
                                                   return Container(
                                                     width: 56,
                                                     height: 56,
                                                     color: AppColors.primary
                                                         .withOpacity(0.1),
-                                                    child: Icon(
-                                                      Icons.book,
-                                                      color: AppColors.primary,
+                                                    child: Center(
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                            value: value,
+                                                            strokeWidth: 2,
+                                                            color: AppColors
+                                                                .primary,
+                                                          ),
                                                     ),
                                                   );
                                                 },
+
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    Container(
+                                                      width: 56,
+                                                      height: 56,
+                                                      color: AppColors.primary
+                                                          .withOpacity(0.1),
+                                                      child: Icon(
+                                                        Icons.book,
+                                                        color:
+                                                            AppColors.primary,
+                                                      ),
+                                                    ),
                                           )
                                         : Container(
                                             width: 56,

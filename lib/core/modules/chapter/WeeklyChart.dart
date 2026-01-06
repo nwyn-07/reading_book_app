@@ -11,7 +11,6 @@ class WeeklyHourChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = _buildWeeklyHours(items);
-
     final bool isEmpty = data.every((e) => e == 0);
     if (isEmpty) {
       return _buildEmptyState();
@@ -29,7 +28,6 @@ class WeeklyHourChart extends StatelessWidget {
         minY: 0,
         alignment: BarChartAlignment.spaceBetween,
 
-        // ================= TOUCH =================
         barTouchData: BarTouchData(
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
@@ -40,7 +38,7 @@ class WeeklyHourChart extends StatelessWidget {
             getTooltipItem: (group, _, rod, __) {
               return BarTooltipItem(
                 '${weekDays[group.x.toInt()]}\n'
-                '${rod.toY.toStringAsFixed(1)} giờ',
+                '${rod.toY.toStringAsFixed(1)} phút',
                 const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -51,7 +49,6 @@ class WeeklyHourChart extends StatelessWidget {
           ),
         ),
 
-        // ================= AXIS =================
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
@@ -96,7 +93,6 @@ class WeeklyHourChart extends StatelessWidget {
           ),
         ),
 
-        // ================= GRID =================
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
@@ -107,7 +103,6 @@ class WeeklyHourChart extends StatelessWidget {
 
         borderData: FlBorderData(show: false),
 
-        // ================= BARS =================
         barGroups: List.generate(7, (i) {
           final isToday = i == todayIndex;
           final value = data[i];
@@ -135,26 +130,28 @@ class WeeklyHourChart extends StatelessWidget {
     );
   }
 
-  // ================= DATA MAPPING =================
-
-  /// Convert ReadingStatsItem → 7 ngày trong tuần (giờ)
   List<double> _buildWeeklyHours(List<ReadingStatsItem> items) {
     final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1)); // Monday
+
+    final today = DateTime(now.year, now.month, now.day);
+
+    final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
 
     final Map<int, double> map = {};
 
     for (final item in items) {
-      final index = item.date.difference(startOfWeek).inDays;
+      final itemDate = DateTime(item.date.year, item.date.month, item.date.day);
+
+      final index = itemDate.difference(startOfWeek).inDays;
+
       if (index >= 0 && index < 7) {
-        map[index] = item.totalDurationSeconds / 3600;
+        map[index] = item.totalDurationSeconds / 60;
       }
     }
 
     return List.generate(7, (i) => map[i] ?? 0.0);
   }
 
-  // ================= EMPTY STATE =================
   Widget _buildEmptyState() {
     return const Center(
       child: Column(
@@ -166,17 +163,11 @@ class WeeklyHourChart extends StatelessWidget {
             'Chưa có dữ liệu tuần này',
             style: TextStyle(color: Colors.white70, fontSize: 15),
           ),
-          SizedBox(height: 4),
-          Text(
-            'Hãy nghe truyện để xem thống kê 📊',
-            style: TextStyle(color: Colors.white38, fontSize: 12),
-          ),
         ],
       ),
     );
   }
 
-  // ================= HELPERS =================
   double _getMaxY(List<double> data) {
     final max = data.reduce((a, b) => a > b ? a : b);
     if (max < 1) return 1;

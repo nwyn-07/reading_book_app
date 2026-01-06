@@ -107,7 +107,7 @@ class Endpoint {
   /// /api/stats
   /// =========================
   static const String readingStats = "$api/stats/reading";
-  static const String readingStatsByDay = "$api/stats/reading/day";
+  static const String readingStatsByDay = "$api/stats/reading";
   static const String readingStatsByMonth = "$api/stats/reading/month";
   static const String readingStatsByYear = "$api/stats/reading/year";
 
