@@ -379,6 +379,23 @@ class _UserScreenState extends State<UserScreen> {
     });
   }
 
+  Future<void> _onRefresh() async {
+    final statsStore = context.read<StatsStore>();
+    final userStore = context.read<UserStore>();
+    final authStore = context.read<AuthStore>();
+    try {
+      await statsStore.fetchDayStats();
+      await userStore.fetchProfile();
+      await authStore.refreshUser();
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      debugPrint('Refresh error: $e');
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -394,289 +411,303 @@ class _UserScreenState extends State<UserScreen> {
     final userName = _getUserName(auth, userStore);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-              // decoration: const BoxDecoration(
-              //   image: DecorationImage(
-              //     image: AssetImage('assets/images/background.png'),
-              //     fit: BoxFit.cover,
-              //   ),
-              // ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    height: 200,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: const BoxDecoration(color: Colors.transparent),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Column(
-                          children: [
-                            Container(
-                              width: 100,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(48),
-                                color: AppColors.primary,
-                              ),
-                              child: GestureDetector(
-                                onTap: () {
-                                  if (avatarUrl.isNotEmpty) {
-                                    _viewAvatar(avatarUrl);
-                                  }
-                                },
-                                onLongPress: _pickAvatarSource,
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(52),
-                                      child: auth.user == null
-                                          ? SvgPicture.asset(
-                                              'assets/icons/person.svg',
-                                              width: 24,
-                                              height: 24,
-                                              colorFilter: ColorFilter.mode(
-                                                AppColors.iconInactive,
-                                                BlendMode.srcIn,
-                                              ),
-                                            )
-                                          : _buildAvatarImage(avatarUrl),
-                                    ),
-
-                                    if (userStore.isUpdating)
-                                      Container(
-                                        width: 100,
-                                        height: 100,
-                                        decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.4),
-                                          borderRadius: BorderRadius.circular(
-                                            52,
-                                          ),
-                                        ),
-                                        child: const CircularProgressIndicator(
-                                          color: Colors.white,
-                                        ),
+      body: RefreshIndicator(
+        color: Colors.white,
+        backgroundColor: Colors.black.withOpacity(0.7),
+        displacement: 40,
+        onRefresh: _onRefresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 24,
+                ),
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/background.png'),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      height: 200,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: const BoxDecoration(
+                        color: Colors.transparent,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Column(
+                            children: [
+                              Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(48),
+                                  color: AppColors.primary,
+                                ),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    if (avatarUrl.isNotEmpty) {
+                                      _viewAvatar(avatarUrl);
+                                    }
+                                  },
+                                  onLongPress: _pickAvatarSource,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(52),
+                                        child: auth.user == null
+                                            ? SvgPicture.asset(
+                                                'assets/icons/person.svg',
+                                                width: 24,
+                                                height: 24,
+                                                colorFilter: ColorFilter.mode(
+                                                  AppColors.iconInactive,
+                                                  BlendMode.srcIn,
+                                                ),
+                                              )
+                                            : _buildAvatarImage(avatarUrl),
                                       ),
+
+                                      if (userStore.isUpdating)
+                                        Container(
+                                          width: 100,
+                                          height: 100,
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withOpacity(
+                                              0.4,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              52,
+                                            ),
+                                          ),
+                                          child:
+                                              const CircularProgressIndicator(
+                                                color: Colors.white,
+                                              ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              GestureDetector(
+                                onLongPress: () {
+                                  _showEditNameDialog(userName);
+                                },
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      userName,
+                                      style: AppTextStyles.body.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w300,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(width: 8),
                                   ],
                                 ),
                               ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Container(
+                      height: 220,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              SvgPicture.asset(
+                                'assets/icons/chart.svg',
+                                width: 20,
+                                height: 20,
+                                colorFilter: const ColorFilter.mode(
+                                  Colors.white,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Tuần này',
+                                style: AppTextStyles.body.copyWith(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const Spacer(),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          Divider(
+                            color: Colors.white38,
+                            height: 1,
+                            thickness: 0.6,
+                          ),
+                          const SizedBox(height: 12),
+                          Expanded(
+                            child: Consumer<StatsStore>(
+                              builder: (_, stats, __) {
+                                if (stats.loading) {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+
+                                if (stats.dayStats == null ||
+                                    stats.dayStats!.isEmpty) {
+                                  return const Center(
+                                    child: Text(
+                                      'Chưa có dữ liệu tuần này',
+                                      style: TextStyle(color: Colors.white70),
+                                    ),
+                                  );
+                                }
+
+                                return WeeklyHourChart(
+                                  items: stats.dayStats!, // ✅ DATA THẬT
+                                );
+                              },
                             ),
-                            const SizedBox(height: 4),
-                            GestureDetector(
-                              onLongPress: () {
-                                _showEditNameDialog(userName);
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      height: 170,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: ListView.separated(
+                        padding: EdgeInsets.zero,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: menuItems.length,
+                        separatorBuilder: (_, __) => Divider(
+                          height: 1,
+                          color: Colors.white.withOpacity(0.1),
+                        ),
+                        itemBuilder: (context, index) {
+                          final item = menuItems[index];
+                          return SizedBox(
+                            height: 56,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: () {
+                                if (item['type'] == 'library') {
+                                  Navigator.pushNamedAndRemoveUntil(
+                                    context,
+                                    '/home',
+                                    (route) => false,
+                                    arguments: {'tab': 2},
+                                  );
+                                } else if (item['route'] != null) {
+                                  Navigator.pushNamed(context, item['route']);
+                                }
                               },
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(
-                                    userName,
-                                    style: AppTextStyles.body.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w300,
+                                  const SizedBox(width: 16),
+                                  SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: SvgPicture.asset(
+                                      item['icon'] as String,
+                                      colorFilter: ColorFilter.mode(
+                                        AppColors.iconActive,
+                                        BlendMode.srcIn,
+                                      ),
                                     ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      item['label'] as String,
+                                      style: AppTextStyles.body.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.only(right: 16),
+                                    child: Icon(
+                                      Icons.chevron_right,
+                                      color: Colors.white38,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
-                          ],
-                        ),
-                      ],
+                          );
+                        },
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 24),
 
-                  const SizedBox(height: 8),
-
-                  Container(
-                    height: 220,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            SvgPicture.asset(
-                              'assets/icons/chart.svg',
-                              width: 20,
-                              height: 20,
-                              colorFilter: const ColorFilter.mode(
-                                Colors.white,
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Tuần này',
-                              style: AppTextStyles.body.copyWith(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const Spacer(),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-
-                        Divider(
-                          color: Colors.white38,
-                          height: 1,
-                          thickness: 0.6,
-                        ),
-                        const SizedBox(height: 12),
-                        Expanded(
-                          child: Consumer<StatsStore>(
-                            builder: (_, stats, __) {
-                              if (stats.loading) {
-                                return const Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              }
-
-                              if (stats.dayStats == null ||
-                                  stats.dayStats!.isEmpty) {
-                                return const Center(
-                                  child: Text(
-                                    'Chưa có dữ liệu tuần này',
-                                    style: TextStyle(color: Colors.white70),
-                                  ),
-                                );
-                              }
-
-                              return WeeklyHourChart(
-                                items: stats.dayStats!, // ✅ DATA THẬT
-                              );
-                            },
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: _handleLogout,
+                        icon: SvgPicture.asset(
+                          'assets/icons/log-out.svg',
+                          width: 22,
+                          colorFilter: ColorFilter.mode(
+                            AppColors.error,
+                            BlendMode.srcIn,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
-                    height: 170,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: ListView.separated(
-                      padding: EdgeInsets.zero,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: menuItems.length,
-                      separatorBuilder: (_, __) => Divider(
-                        height: 1,
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                      itemBuilder: (context, index) {
-                        final item = menuItems[index];
-                        return SizedBox(
-                          height: 56,
-                          child: InkWell(
+                        label: Text(
+                          'Đăng xuất',
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.error,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.background,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
-                            onTap: () {
-                              if (item['type'] == 'library') {
-                                Navigator.pushNamedAndRemoveUntil(
-                                  context,
-                                  '/home',
-                                  (route) => false,
-                                  arguments: {'tab': 2},
-                                );
-                              } else if (item['route'] != null) {
-                                Navigator.pushNamed(context, item['route']);
-                              }
-                            },
-                            child: Row(
-                              children: [
-                                const SizedBox(width: 16),
-                                SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: SvgPicture.asset(
-                                    item['icon'] as String,
-                                    colorFilter: ColorFilter.mode(
-                                      AppColors.iconActive,
-                                      BlendMode.srcIn,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Text(
-                                    item['label'] as String,
-                                    style: AppTextStyles.body.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ),
-                                const Padding(
-                                  padding: EdgeInsets.only(right: 16),
-                                  child: Icon(
-                                    Icons.chevron_right,
-                                    color: Colors.white38,
-                                  ),
-                                ),
-                              ],
-                            ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton.icon(
-                      onPressed: _handleLogout,
-                      icon: SvgPicture.asset(
-                        'assets/icons/log-out.svg',
-                        width: 22,
-                        colorFilter: ColorFilter.mode(
-                          AppColors.error,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                      label: Text(
-                        'Đăng xuất',
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.error,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.background,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

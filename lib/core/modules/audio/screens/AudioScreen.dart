@@ -21,7 +21,6 @@ class AudioScreen extends StatefulWidget {
 class _AudioScreenState extends State<AudioScreen> {
   Timer? _sleepTimer;
   SleepOption? _currentSleepOption;
-  bool _isLooping = false;
 
   late AudioStore _audio;
 
@@ -230,20 +229,38 @@ class _AudioScreenState extends State<AudioScreen> {
                         child: _icon('menu-01-stroke-rounded.svg'),
                       ),
 
-                      GestureDetector(
-                        onTap: _toggleLoop,
-                        child: SvgPicture.asset(
-                          _isLooping
-                              ? 'assets/icons/repeat-one-01-stroke-rounded.svg'
-                              : 'assets/icons/repeat-stroke-rounded.svg',
-                          width: 30,
-                          colorFilter: ColorFilter.mode(
-                            _isLooping
-                                ? AppColors.textPrimary
-                                : AppColors.iconInactive,
-                            BlendMode.srcIn,
-                          ),
-                        ),
+                      Consumer<AudioStore>(
+                        builder: (_, audio, _) {
+                          String icon;
+                          Color color;
+
+                          switch (audio.loopMode) {
+                            case AudioLoopMode.one:
+                              icon =
+                                  'assets/icons/repeat-one-01-stroke-rounded.svg';
+                              color = AppColors.textPrimary;
+                              break;
+                            case AudioLoopMode.all:
+                              icon = 'assets/icons/repeat-stroke-rounded.svg';
+                              color = AppColors.textPrimary;
+                              break;
+                            default:
+                              icon = 'assets/icons/repeat-stroke-rounded.svg';
+                              color = AppColors.iconInactive;
+                          }
+
+                          return GestureDetector(
+                            onTap: audio.toggleLoopMode,
+                            child: SvgPicture.asset(
+                              icon,
+                              width: 30,
+                              colorFilter: ColorFilter.mode(
+                                color,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          );
+                        },
                       ),
 
                       Consumer<LibraryStore>(
@@ -353,11 +370,6 @@ class _AudioScreenState extends State<AudioScreen> {
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$m:$s';
-  }
-
-  void _toggleLoop() async {
-    setState(() => _isLooping = !_isLooping);
-    await _audio.player.setLoopMode(_isLooping ? LoopMode.one : LoopMode.off);
   }
 
   void _startSleepTimer(Duration duration) {

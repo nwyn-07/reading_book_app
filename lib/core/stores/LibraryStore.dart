@@ -6,7 +6,6 @@ import 'package:reading_book_app/core/services/api/CoreService.dart';
 class LibraryStore extends ChangeNotifier {
   final _api = CoreServices.instance;
 
-  // ===== DATA =====
   List<Library> _libraries = [];
   final Set<String> _favoriteStoryIds = {};
 
@@ -18,7 +17,6 @@ class LibraryStore extends ChangeNotifier {
   bool _loading = false;
   String? _error;
 
-  // ===== GETTERS =====
   bool get isLoading => _loading;
   String? get error => _error;
 
@@ -34,34 +32,52 @@ class LibraryStore extends ChangeNotifier {
   }
 
   Future<void> fetchLibraries() async {
+    debugPrint('[LibraryStore] fetchLibraries → START');
     _loading = true;
+    notifyListeners();
 
     try {
       _libraries = await _api.library();
+      debugPrint('[LibraryStore] Loaded libraries: ${_libraries.length}');
 
+      // Load stories cho từng library
       for (final lib in _libraries) {
+        debugPrint('[LibraryStore] Fetch stories for lib=${lib.id}');
         final stories = await _api.libraryStories(lib.id);
+        debugPrint('[LibraryStore] lib=${lib.id} stories=${stories.length}');
+
         _libStories[lib.id] = stories;
         _libStoriesTimestamp[lib.id] = DateTime.now();
       }
 
-      final fav = _libraries.firstWhere(
-        (e) => e.name == 'Yêu thích',
-        orElse: () =>
-            createLibrary('Yêu thích').then((_) {
-                  return _libraries.firstWhere((e) => e.name == 'Yêu thích');
-                })
-                as Library,
-      );
+      // ================= FAVORITE =================
+      Library? favorite;
 
-      _favoriteLibraryId = fav.id;
+      try {
+        favorite = _libraries.firstWhere((e) => e.name == 'Yêu thích');
+        debugPrint('[LibraryStore] Favorite library FOUND');
+      } catch (_) {
+        debugPrint('[LibraryStore] Favorite library NOT FOUND → creating');
+        await _api.addLibrary('Yêu thích');
+
+        _libraries = await _api.library();
+        favorite = _libraries.firstWhere((e) => e.name == 'Yêu thích');
+      }
+
+      _favoriteLibraryId = favorite.id;
+      debugPrint('[LibraryStore] Favorite library id=$_favoriteLibraryId');
+
+      await fetchFavoriteStories();
+
       _error = null;
-      notifyListeners();
-    } catch (e) {
+    } catch (e, stack) {
       _error = e.toString();
+      debugPrint('[LibraryStore][ERROR] fetchLibraries FAILED: $e');
+      debugPrintStack(stackTrace: stack);
     } finally {
       _loading = false;
       notifyListeners();
+      debugPrint('[LibraryStore] fetchLibraries → END');
     }
   }
 
@@ -76,11 +92,9 @@ class LibraryStore extends ChangeNotifier {
   }) async {
     await _api.addStoryToLibrary(libraryId: libraryId, storyId: storyId);
 
-    // Clear cache for this library
     _libStories.remove(libraryId);
     _libStoriesTimestamp.remove(libraryId);
 
-    // If this is favorite library, update favorite ids
     if (libraryId == _favoriteLibraryId) {
       _favoriteStoryIds.add(storyId);
     }
@@ -88,9 +102,6 @@ class LibraryStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ===============================
-  // FAVORITE STORIES
-  // ===============================
   Future<void> fetchFavoriteStories() async {
     if (_favoriteLibraryId == null) return;
 
@@ -147,19 +158,12 @@ class LibraryStore extends ChangeNotifier {
     required String libraryId,
     required String storyId,
   }) async {
-    debugPrint(
-      '[LibraryStore] removeStoryFromLibrary → libraryId=$libraryId, storyId=$storyId',
-    );
-
-    // ===== LƯU STATE CŨ ĐỂ ROLLBACK =====
     final prevStories = _libStories[libraryId];
     final prevFavoriteIds = Set<String>.from(_favoriteStoryIds);
 
     try {
-      // ===== CALL API =====
       await _api.removeStoryFromLibrary(libraryId: libraryId, storyId: storyId);
 
-      // ===== UPDATE LOCAL STATE =====
       _libStories.remove(libraryId);
       _libStoriesTimestamp.remove(libraryId);
 
@@ -167,13 +171,8 @@ class LibraryStore extends ChangeNotifier {
         _favoriteStoryIds.remove(storyId);
       }
 
-      debugPrint(
-        '[LibraryStore] removeStoryFromLibrary SUCCESS → storyId=$storyId',
-      );
-
       notifyListeners();
     } catch (e, stack) {
-      // ===== LOG ERROR =====
       debugPrint(
         '[LibraryStore][ERROR] removeStoryFromLibrary FAILED\n'
         'libraryId=$libraryId\n'
@@ -182,7 +181,6 @@ class LibraryStore extends ChangeNotifier {
       );
       debugPrintStack(stackTrace: stack);
 
-      // ===== ROLLBACK STATE =====
       if (prevStories != null) {
         _libStories[libraryId] = prevStories;
       }
@@ -191,9 +189,6 @@ class LibraryStore extends ChangeNotifier {
         ..addAll(prevFavoriteIds);
 
       notifyListeners();
-
-      // 👉 optional: rethrow nếu UI cần bắt lỗi
-      // rethrow;
     }
   }
 

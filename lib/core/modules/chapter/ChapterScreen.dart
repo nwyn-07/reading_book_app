@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reading_book_app/core/models/Chapter.dart';
@@ -151,45 +152,35 @@ class _ChapterScreenState extends State<ChapterScreen> {
                                             ? ClipRRect(
                                                 borderRadius:
                                                     BorderRadius.circular(12),
-                                                child: Image.network(
-                                                  widget.story.coverUrl,
+                                                child: CachedNetworkImage(
+                                                  imageUrl:
+                                                      widget.story.coverUrl,
                                                   width: 100,
                                                   height: 140,
                                                   fit: BoxFit.cover,
-                                                  loadingBuilder: (context, child, loadingProgress) {
-                                                    if (loadingProgress == null)
-                                                      return child;
-                                                    return Center(
-                                                      child: CircularProgressIndicator(
-                                                        value:
-                                                            loadingProgress
-                                                                    .expectedTotalBytes !=
-                                                                null
-                                                            ? loadingProgress
-                                                                      .cumulativeBytesLoaded /
-                                                                  loadingProgress
-                                                                      .expectedTotalBytes!
-                                                            : null,
-                                                        color:
-                                                            AppColors.primary,
+
+                                                  placeholder: (context, url) =>
+                                                      const Center(
+                                                        child: SizedBox(
+                                                          width: 24,
+                                                          height: 24,
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                strokeWidth: 2,
+                                                              ),
+                                                        ),
                                                       ),
-                                                    );
-                                                  },
-                                                  errorBuilder:
-                                                      (
-                                                        context,
-                                                        error,
-                                                        stackTrace,
-                                                      ) {
-                                                        return Center(
-                                                          child: Icon(
-                                                            Icons.book,
-                                                            size: 40,
-                                                            color: AppColors
-                                                                .primary,
+
+                                                  errorWidget:
+                                                      (context, url, error) =>
+                                                          Center(
+                                                            child: Icon(
+                                                              Icons.book,
+                                                              size: 40,
+                                                              color: AppColors
+                                                                  .primary,
+                                                            ),
                                                           ),
-                                                        );
-                                                      },
                                                 ),
                                               )
                                             : Center(
