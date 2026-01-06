@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:reading_book_app/core/stores/AudioStore.dart';
@@ -46,7 +47,7 @@ class MiniPlayer extends StatelessWidget {
                       Text(
                         story.title,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),
@@ -69,9 +70,16 @@ class MiniPlayer extends StatelessWidget {
                   builder: (_, snapshot) {
                     final playing = snapshot.data?.playing ?? false;
                     return IconButton(
-                      icon: Icon(
-                        playing ? Icons.pause : Icons.play_arrow,
-                        color: Colors.white,
+                      icon: SvgPicture.asset(
+                        playing
+                            ? 'assets/icons/pause.svg'
+                            : 'assets/icons/play-1003-svgrepo-com.svg',
+                        width: 24,
+                        height: 24,
+                        colorFilter: const ColorFilter.mode(
+                          AppColors.iconActive,
+                          BlendMode.srcIn,
+                        ),
                       ),
                       onPressed: playing ? audio.pause : audio.resume,
                     );

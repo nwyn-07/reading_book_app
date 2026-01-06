@@ -15,6 +15,7 @@ class StoryCategoryItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        alignment: Alignment.center,
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
@@ -24,6 +25,7 @@ class StoryCategoryItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
+          textAlign: TextAlign.center,
           category.title,
           style: AppTextStyles.h2.copyWith(
             fontSize: 14,

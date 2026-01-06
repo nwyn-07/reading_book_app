@@ -1,8 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:reading_book_app/core/models/Chapter.dart';
 import 'package:reading_book_app/core/models/Book.dart';
+import 'package:reading_book_app/core/modules/audio/components/PlayingWave.dart';
+import 'package:reading_book_app/core/modules/home/components/MiniPlayer.dart';
 import 'package:reading_book_app/core/stores/AudioStore.dart';
 import 'package:reading_book_app/core/stores/ChapterStore.dart';
 import 'package:reading_book_app/core/theme/AppColors.dart';
@@ -531,23 +534,42 @@ class _ChapterScreenState extends State<ChapterScreen> {
                                   color: AppColors.primary.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(18),
                                 ),
-                                child: IconButton(
-                                  icon: Icon(
-                                    isPlaying ? Icons.pause : Icons.play_arrow,
-                                    size: 20,
-                                    color: AppColors.primary,
-                                  ),
-                                  onPressed: () {
-                                    final audio = context.read<AudioStore>();
-                                    audio.playChapter(
-                                      story: widget.story,
-                                      chapter: chapter,
-                                    );
-                                    Navigator.of(context).pushNamed('/audio');
-                                  },
-                                  padding: EdgeInsets.zero,
+                                child: Center(
+                                  child: isPlaying
+                                      ? GestureDetector(
+                                          onTap: () {
+                                            context.read<AudioStore>().pause();
+                                          },
+                                          child: const PlayingWave(
+                                            isPlaying: true,
+                                          ),
+                                        )
+                                      : IconButton(
+                                          padding: EdgeInsets.zero,
+                                          onPressed: () {
+                                            final audio = context
+                                                .read<AudioStore>();
+                                            audio.playChapter(
+                                              story: widget.story,
+                                              chapter: chapter,
+                                            );
+                                            Navigator.of(
+                                              context,
+                                            ).pushNamed('/audio');
+                                          },
+                                          icon: SvgPicture.asset(
+                                            'assets/icons/play-1003-svgrepo-com.svg',
+                                            width: 20,
+                                            height: 20,
+                                            colorFilter: const ColorFilter.mode(
+                                              AppColors.iconActive,
+                                              BlendMode.srcIn,
+                                            ),
+                                          ),
+                                        ),
                                 ),
                               ),
+
                               onTap: () {
                                 final audio = context.read<AudioStore>();
                                 audio.playChapter(
@@ -580,6 +602,7 @@ class _ChapterScreenState extends State<ChapterScreen> {
                     child: const Icon(Icons.arrow_upward_rounded, size: 30),
                   ),
                 ),
+              Align(alignment: Alignment.bottomCenter, child: MiniPlayer()),
             ],
           );
         },
