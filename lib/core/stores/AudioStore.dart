@@ -16,7 +16,7 @@ enum AudioLoopMode { off, all, one }
 class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
   final AudioPlayer _player = AudioPlayer();
   final Dio _dio = Dio();
-  Map<DateTime, double> _listenedHours = {};
+  final Map<DateTime, double> _listenedHours = {};
   DateTime? _currentDay;
   Duration _lastPosition = Duration.zero;
 
