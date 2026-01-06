@@ -91,10 +91,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
                             const SizedBox(height: 12),
                             Text('Mới', style: AppTextStyles.h3),
+                            const SizedBox(height: 8),
                             _buildHorizontalList(books),
 
                             const SizedBox(height: 12),
                             Text('Phổ biến', style: AppTextStyles.h3),
+                            const SizedBox(height: 8),
                             _buildHorizontalList(books),
 
                             const SizedBox(height: 80),

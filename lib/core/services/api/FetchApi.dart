@@ -12,9 +12,6 @@ class FetchApi {
 
   final _storage = const FlutterSecureStorage();
 
-  /// ======================
-  /// Headers
-  /// ======================
   Future<Map<String, String>> _headers() async {
     final token = await _storage.read(key: 'access_token');
 
@@ -30,9 +27,6 @@ class FetchApi {
     return headers;
   }
 
-  /// ======================
-  /// GET
-  /// ======================
   Future<dynamic> get(
     String url, {
     Map<String, dynamic>? query,
@@ -54,9 +48,6 @@ class FetchApi {
     return _handleResponse(res);
   }
 
-  /// ======================
-  /// POST
-  /// ======================
   Future<dynamic> post(String url, {Map<String, dynamic>? body}) async {
     final res = await http.post(
       Uri.parse(url),
@@ -66,9 +57,6 @@ class FetchApi {
     return _handleResponse(res);
   }
 
-  /// ======================
-  /// PUT
-  /// ======================
   Future<dynamic> put(String url, {dynamic body}) async {
     if (body is http.MultipartRequest) {
       final headers = await _headers();
@@ -90,9 +78,6 @@ class FetchApi {
     return _handleResponse(res);
   }
 
-  /// ======================
-  /// DELETE
-  /// ======================
   Future<dynamic> delete(String url, {Map<String, dynamic>? body}) async {
     final request = http.Request('DELETE', Uri.parse(url));
 
@@ -108,11 +93,7 @@ class FetchApi {
     return _handleResponse(response);
   }
 
-  /// ======================
-  /// Response handler
-  /// ======================
   dynamic _handleResponse(http.Response res) async {
-    // ================= SUCCESS =================
     if (res.statusCode >= 200 && res.statusCode < 300) {
       if (res.body.isEmpty) return null;
 
@@ -123,13 +104,11 @@ class FetchApi {
       }
     }
 
-    // ================= UNAUTHORIZED =================
     if (res.statusCode == 401) {
       await _logout();
       throw ApiException('Session expired. Please login again.', 401);
     }
 
-    // ================= FORBIDDEN =================
     if (res.statusCode == 403) {
       throw ApiException(
         'You do not have permission to perform this action.',
@@ -137,22 +116,18 @@ class FetchApi {
       );
     }
 
-    // ================= BAD REQUEST =================
     if (res.statusCode == 400) {
       throw ApiException('Invalid request.', 400);
     }
 
-    // ================= NOT FOUND =================
     if (res.statusCode == 404) {
       throw ApiException('Resource not found.', 404);
     }
 
-    // ================= CONFLICT =================
     if (res.statusCode == 409) {
       throw ApiException('Conflict occurred.', 409);
     }
 
-    // ================= SERVER ERROR =================
     if (res.statusCode >= 500) {
       throw ApiException(
         'Server error. Please try again later.',
@@ -160,13 +135,9 @@ class FetchApi {
       );
     }
 
-    // ================= FALLBACK =================
     throw ApiException('Unexpected error (${res.statusCode})', res.statusCode);
   }
 
-  /// ======================
-  /// Logout
-  /// ======================
   Future<void> _logout() async {
     await _storage.delete(key: 'access_token');
   }
