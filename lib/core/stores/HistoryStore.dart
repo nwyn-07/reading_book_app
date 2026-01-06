@@ -21,7 +21,7 @@ class HistoryStore extends ChangeNotifier {
         try {
           list.add(ReadingHistory.fromJson(item));
         } catch (e) {
-          print('Error parsing history item $item: $e');
+          debugPrint('Error parsing history item $item: $e');
         }
       }
 

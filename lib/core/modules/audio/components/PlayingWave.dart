@@ -57,7 +57,7 @@ class _PlayingWaveState extends State<PlayingWave>
   Widget _bar({required double heightFactor, required bool inverse}) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (_, __) {
+      builder: (_, _) {
         final value = inverse ? 1 - _controller.value : _controller.value;
 
         final height = 7 + 10 * value * heightFactor;

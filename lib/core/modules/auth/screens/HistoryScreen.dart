@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:reading_book_app/core/models/Chapter.dart';
 import 'package:reading_book_app/core/stores/ChapterStore.dart';
 import 'package:reading_book_app/core/stores/HistoryStore.dart';
 import 'package:reading_book_app/core/stores/AudioStore.dart';
@@ -180,7 +181,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 }
 
 class _HistoryItem extends StatelessWidget {
-  final dynamic chapter;
+  final Chapter chapter;
   final double progress;
   final int resumeSeconds;
 
@@ -223,9 +224,9 @@ class _HistoryItem extends StatelessWidget {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: chapter.story.coverUrl?.isNotEmpty == true
+                    child: chapter.story.coverUrl.isNotEmpty == true
                         ? Image.network(
-                            chapter.story.coverUrl!,
+                            chapter.story.coverUrl,
                             width: 56,
                             height: 56,
                             fit: BoxFit.cover,

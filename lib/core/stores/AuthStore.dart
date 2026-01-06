@@ -68,7 +68,7 @@ class AuthStore extends ChangeNotifier {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<bool> login(String email, String password) async {
     _setLoading(true);
 
     try {
@@ -82,6 +82,11 @@ class AuthStore extends ChangeNotifier {
       await _storage.write(key: 'access_token', value: token);
 
       await fetchMe();
+
+      return true;
+    } catch (e) {
+      debugPrint('Login error: $e');
+      return false;
     } finally {
       _setLoading(false);
     }

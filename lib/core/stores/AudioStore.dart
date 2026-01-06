@@ -285,7 +285,7 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
         chapterId: currentChapter!.id,
         storyId: currentStory!.id,
         progress: position.inSeconds,
-        totalSeconds: position.inSeconds, // hoặc lấy từ history
+        totalSeconds: position.inSeconds,
       );
     }
 

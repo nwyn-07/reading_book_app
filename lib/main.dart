@@ -5,7 +5,6 @@ import 'package:reading_book_app/core/stores/StatsStore.dart';
 
 import 'package:reading_book_app/core/utils/Utils.dart';
 
-// ===== STORES =====
 import 'package:reading_book_app/core/stores/AuthStore.dart';
 import 'package:reading_book_app/core/stores/UserStore.dart';
 import 'package:reading_book_app/core/stores/StoryStore.dart';
@@ -15,7 +14,6 @@ import 'package:reading_book_app/core/stores/DownloadStore.dart';
 import 'package:reading_book_app/core/stores/HistoryStore.dart';
 import 'package:reading_book_app/core/stores/AudioStore.dart';
 
-// ===== SCREENS / MODULES =====
 import 'package:reading_book_app/core/modules/MainShell.dart';
 import 'package:reading_book_app/core/modules/audio/screens/AudioScreen.dart';
 import 'package:reading_book_app/core/modules/chapter/ChapterScreen.dart';
@@ -25,7 +23,6 @@ import 'package:reading_book_app/core/modules/auth/screens/HistoryScreen.dart';
 import 'package:reading_book_app/core/modules/auth/screens/DownloadScreen.dart';
 import 'package:reading_book_app/core/modules/auth/screens/PlaylistScreen.dart';
 
-// ===== MODELS =====
 import 'package:reading_book_app/core/models/Book.dart';
 import 'package:reading_book_app/core/models/Library.dart';
 
@@ -34,6 +31,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthStore()..init()),
+
         ChangeNotifierProvider(create: (_) => StoryStore()),
         ChangeNotifierProvider(create: (_) => ChapterStore()),
         ChangeNotifierProvider(create: (_) => LibraryStore()),
@@ -42,19 +40,13 @@ void main() {
         ChangeNotifierProvider(create: (_) => StatsStore()),
         ChangeNotifierProvider(create: (_) => ReadingStore()),
         ChangeNotifierProvider(create: (_) => HistoryStore()),
-        ChangeNotifierProxyProvider<HistoryStore, AudioStore>(
+
+        ChangeNotifierProxyProvider2<HistoryStore, ReadingStore, AudioStore>(
           create: (_) => AudioStore(),
-          update: (_, historyStore, audioStore) {
+          update: (_, historyStore, readingStore, audioStore) {
             audioStore ??= AudioStore();
             audioStore.attachHistoryStore(historyStore);
-            return audioStore;
-          },
-        ),
-        ChangeNotifierProvider(create: (_) => ReadingStore()),
-        ChangeNotifierProxyProvider<ReadingStore, AudioStore>(
-          create: (_) => AudioStore(),
-          update: (_, readingStore, audioStore) {
-            audioStore!.attachReadingStore(readingStore);
+            audioStore.attachReadingStore(readingStore);
             return audioStore;
           },
         ),

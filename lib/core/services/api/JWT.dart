@@ -3,7 +3,6 @@ import 'dart:convert';
 class JwtDecoder {
   JwtDecoder._();
 
-  /// Decode payload JWT
   static Map<String, dynamic> decode(String token) {
     final parts = token.split('.');
     if (parts.length != 3) {
@@ -16,7 +15,6 @@ class JwtDecoder {
     return payloadMap;
   }
 
-  /// Check token expired
   static bool isExpired(String token) {
     try {
       final payload = decode(token);
