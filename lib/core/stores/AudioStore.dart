@@ -11,12 +11,10 @@ import 'package:reading_book_app/core/models/Chapter.dart';
 import 'package:reading_book_app/core/stores/HistoryStore.dart';
 import 'package:reading_book_app/core/stores/ReadingStore.dart';
 
-enum AudioLoopMode { off, all, one }
-
 class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
   final AudioPlayer _player = AudioPlayer();
   final Dio _dio = Dio();
-  final Map<DateTime, double> _listenedHours = {};
+  Map<DateTime, double> _listenedHours = {};
   DateTime? _currentDay;
   Duration _lastPosition = Duration.zero;
 
@@ -34,11 +32,8 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
   bool isDownloading = false;
   double downloadProgress = 0.0;
 
-  AudioLoopMode _loopMode = AudioLoopMode.off;
-  AudioLoopMode get loopMode => _loopMode;
-
-  bool get isLoopOne => _loopMode == AudioLoopMode.one;
-  bool get isLoopAll => _loopMode == AudioLoopMode.all;
+  bool _isLooping = false;
+  bool get isLooping => _isLooping;
 
   final Set<String> _downloadedChapters = {};
   final Set<String> _downloadedStories = {};
@@ -85,7 +80,9 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
 
     _player.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
-        _onChapterCompleted();
+        _saveHistory(force: true);
+        _readingStore?.finishReading();
+        playNext();
       }
     });
 
@@ -122,18 +119,15 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> toggleLoopMode() async {
-    if (_loopMode == AudioLoopMode.off) {
-      _loopMode = AudioLoopMode.all;
-      await player.setLoopMode(LoopMode.all);
-    } else if (_loopMode == AudioLoopMode.all) {
-      _loopMode = AudioLoopMode.one;
-      await player.setLoopMode(LoopMode.one);
-    } else {
-      _loopMode = AudioLoopMode.off;
-      await player.setLoopMode(LoopMode.off);
-    }
+  Future<void> toggleLoop() async {
+    _isLooping = !_isLooping;
+    await player.setLoopMode(_isLooping ? LoopMode.one : LoopMode.off);
+    notifyListeners();
+  }
 
+  Future<void> setLoop(bool value) async {
+    _isLooping = value;
+    await player.setLoopMode(value ? LoopMode.one : LoopMode.off);
     notifyListeners();
   }
 
@@ -141,8 +135,7 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     _chapters = chapters;
   }
 
-  bool get hasNext =>
-      _currentIndex < _chapters.length - 1 || _loopMode == AudioLoopMode.all;
+  bool get hasNext => _currentIndex < _chapters.length - 1;
   bool get hasPrevious => _currentIndex > 0;
 
   Future<void> playChapter({
@@ -204,17 +197,8 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> playNext() async {
-    if (currentStory == null || _chapters.isEmpty) return;
-
-    if (_currentIndex < _chapters.length - 1) {
-      _currentIndex++;
-    } else if (_loopMode == AudioLoopMode.all) {
-      _currentIndex = 0;
-    } else {
-      return;
-    }
-
-    final nextChapter = _chapters[_currentIndex];
+    if (!hasNext || currentStory == null) return;
+    final nextChapter = _chapters[_currentIndex + 1];
     await playChapter(story: currentStory!, chapter: nextChapter);
   }
 
@@ -410,33 +394,5 @@ class AudioStore extends ChangeNotifier with WidgetsBindingObserver {
     return _chapters
         .where((chapter) => _downloadedChapters.contains(chapter.id))
         .toList();
-  }
-
-  Future<void> _onChapterCompleted() async {
-    await _saveHistory(force: true);
-    _readingStore?.finishReading();
-
-    // Loop 1 chương → just_audio tự xử lý
-    if (_loopMode == AudioLoopMode.one) {
-      return;
-    }
-
-    // Loop toàn bộ story
-    if (_loopMode == AudioLoopMode.all) {
-      if (_currentIndex < _chapters.length - 1) {
-        await playNext();
-      } else {
-        // 🔁 hết chương cuối → quay về chương đầu
-        _currentIndex = 0;
-        final first = _chapters.first;
-        await playChapter(story: currentStory!, chapter: first);
-      }
-      return;
-    }
-
-    // Không loop → chỉ play next nếu còn
-    if (hasNext) {
-      await playNext();
-    }
   }
 }

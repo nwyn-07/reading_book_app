@@ -14,11 +14,8 @@ class UserStore extends ChangeNotifier {
   User? get currentUser => _currentUser;
   bool get isUpdating => _isUpdating;
   String? get error => _error;
-
-  /// ✅ FLAG: Store này có fetch profile
   bool get hasFetchProfile => true;
 
-  /// 🔄 FETCH PROFILE (Refresh)
   Future<void> fetchProfile() async {
     try {
       final res = await _api.me();

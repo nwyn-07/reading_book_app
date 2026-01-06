@@ -5,7 +5,10 @@ import 'package:reading_book_app/core/models/Book.dart';
 class StoryStore extends ChangeNotifier {
   final CoreServices _api = CoreServices.instance;
 
+  final List<Book> _allStories = [];
+
   List<Book> _stories = [];
+
   Book? _currentStory;
 
   bool _loading = false;
@@ -40,6 +43,7 @@ class StoryStore extends ChangeNotifier {
     if (refresh) {
       _page = 1;
       _hasMore = true;
+      _allStories.clear();
       _stories.clear();
     }
 
@@ -57,7 +61,8 @@ class StoryStore extends ChangeNotifier {
       if (books.isEmpty) {
         _hasMore = false;
       } else {
-        _stories.addAll(books);
+        _allStories.addAll(books);
+        _stories = List.from(_allStories);
         _page++;
       }
 
@@ -70,6 +75,35 @@ class StoryStore extends ChangeNotifier {
     }
   }
 
+  void searchStories(String keyword) {
+    final query = keyword.trim().toLowerCase();
+
+    if (query.isEmpty) {
+      _stories = List.from(_allStories);
+      _hasMore = true;
+      notifyListeners();
+      return;
+    }
+
+    _stories = _allStories.where((book) {
+      return book.title.toLowerCase().contains(query) ||
+          (book.author.toLowerCase().contains(query));
+    }).toList();
+
+    _hasMore = false;
+    notifyListeners();
+  }
+
+  Future<void> resetAndFetch() async {
+    _allStories.clear();
+    _stories.clear();
+    _page = 1;
+    _hasMore = true;
+    _initialized = false;
+    notifyListeners();
+    await fetchStories(refresh: true);
+  }
+
   Future<Book?> fetchStoryDetail(String storyId) async {
     _setLoading(true);
 
@@ -77,44 +111,25 @@ class StoryStore extends ChangeNotifier {
       final Map<String, dynamic> res = await _api.storyDetail(storyId);
       final book = Book.fromJson(res);
 
-      // Cache lại
       _currentStory = book;
       _setError(null);
-
-      _setLoading(false);
       return book;
     } catch (e) {
       _setError(e.toString());
-      _setLoading(false);
       return null;
-    }
-  }
-
-  Future<void> searchStories(String keyword) async {
-    _setLoading(true);
-
-    try {
-      final List<dynamic> res = await _api.searchStory(keyword);
-
-      _stories = res
-          .map<Book>((e) => Book.fromJson(e as Map<String, dynamic>))
-          .toList();
-
-      _hasMore = false;
-      _setError(null);
-    } catch (e) {
-      _setError(e.toString());
     } finally {
       _setLoading(false);
     }
   }
 
   void clear() {
+    _allStories.clear();
     _stories.clear();
     _currentStory = null;
     _page = 1;
     _hasMore = true;
     _error = null;
+    _initialized = false;
     notifyListeners();
   }
 }

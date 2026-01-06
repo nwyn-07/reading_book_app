@@ -15,15 +15,12 @@ class AuthStore extends ChangeNotifier {
   Map<String, dynamic>? get user => _user;
   bool get isLoading => _loading;
 
-  /// ✅ FLAG: AuthStore hỗ trợ refresh user
   bool get hasRefreshUser => true;
 
-  /// 🔄 REFRESH USER (dùng cho pull-to-refresh)
   Future<void> refreshUser() async {
     try {
       final token = await _storage.read(key: 'access_token');
 
-      // Nếu không có token → coi như logout
       if (token == null || JwtDecoder.isExpired(token)) {
         await logout();
         return;
@@ -39,8 +36,6 @@ class AuthStore extends ChangeNotifier {
       await logout();
     }
   }
-
-  // ====== PHẦN CŨ GIỮ NGUYÊN ======
 
   Future<void> init() async {
     _setLoading(true);

@@ -12,9 +12,6 @@ class StatsStore extends ChangeNotifier {
   List<ReadingStatsItem>? _monthStats;
   List<ReadingStatsItem>? _yearStats;
 
-  /// ======================
-  /// GETTERS
-  /// ======================
   bool get loading => _loading;
   String? get error => _error;
 
@@ -22,9 +19,6 @@ class StatsStore extends ChangeNotifier {
   List<ReadingStatsItem>? get monthStats => _monthStats;
   List<ReadingStatsItem>? get yearStats => _yearStats;
 
-  /// ======================
-  /// INTERNAL
-  /// ======================
   void _setLoading(bool value) {
     _loading = value;
     notifyListeners();
@@ -35,25 +29,12 @@ class StatsStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// ======================
-  /// ACTIONS
-  /// ======================
-
-  /// 📊 Stats theo ngày
   Future<void> fetchDayStats() async {
-    debugPrint('[StatsStore] fetchDayStats → START');
-
     _setLoading(true);
     _setError(null);
 
     try {
-      debugPrint('[StatsStore] Calling API statsDay(count: 7)');
-
       final result = await _core.statsDay(7);
-
-      debugPrint(
-        '[StatsStore] fetchDayStats → SUCCESS (${result.length} items)',
-      );
 
       _dayStats = result;
     } catch (e, stack) {
@@ -67,7 +48,6 @@ class StatsStore extends ChangeNotifier {
     }
   }
 
-  /// 📊 Stats theo tháng
   Future<void> fetchMonthStats() async {
     _setLoading(true);
     _setError(null);
@@ -81,7 +61,6 @@ class StatsStore extends ChangeNotifier {
     }
   }
 
-  /// 📊 Stats theo năm
   Future<void> fetchYearStats() async {
     _setLoading(true);
     _setError(null);
@@ -95,7 +74,6 @@ class StatsStore extends ChangeNotifier {
     }
   }
 
-  /// 📊 Fetch tất cả (dashboard)
   Future<void> fetchAll() async {
     _setLoading(true);
     _setError(null);
@@ -117,7 +95,6 @@ class StatsStore extends ChangeNotifier {
     }
   }
 
-  /// 🧹 Clear cache (logout)
   void clear() {
     _dayStats = null;
     _monthStats = null;

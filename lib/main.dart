@@ -124,9 +124,6 @@ class MyApp extends StatelessWidget {
     );
   }
 
-  /// =========================
-  /// ROOT DECISION
-  /// =========================
   Widget _buildHome(AuthStore auth) {
     if (auth.isLoading) {
       return const SplashScreen();
